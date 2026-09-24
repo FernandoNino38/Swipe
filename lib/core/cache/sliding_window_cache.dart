@@ -52,8 +52,18 @@ class SlidingWindowCache {
       debugPrint('[Memory] Evicção de RAM do asset $id para prevenção de OOM.');
     }
 
-    // 3. PRÉ-CARREGAMENTO ASSÍNCRONO dos próximos slots
+    // 3. PRÉ-CARREGAMENTO:
+    // Garante que o card ATIVO (N) seja decodificado prioritariamente de forma síncrona
+    if (currentIndex >= 0 && currentIndex < items.length) {
+      final currentItem = items[currentIndex];
+      if (!_byteCache.containsKey(currentItem.id) && currentItem.assetEntity != null) {
+        await _preloadAsset(currentItem, targetSize);
+      }
+    }
+
+    // Pré-carregamento assíncrono dos slots adjacentes da janela deslizante (N-1, N+1, N+2)
     for (int i = startIndex; i <= endIndex; i++) {
+      if (i == currentIndex) continue;
       final item = items[i];
       if (!_byteCache.containsKey(item.id) && item.assetEntity != null) {
         _preloadAsset(item, targetSize);

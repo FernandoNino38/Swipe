@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:photo_manager/photo_manager.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/models/triage_item.dart';
 import 'metadata_pill.dart';
@@ -275,14 +278,14 @@ class _TriageCardState extends State<TriageCard>
                                     width: 2.5,
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
-                                    SizedBox(width: 8),
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'MANTER',
-                                      style: TextStyle(
+                                      AppStrings.of(context).keep,
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
                                         fontWeight: FontWeight.w900,
@@ -318,14 +321,14 @@ class _TriageCardState extends State<TriageCard>
                                     width: 2.5,
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.delete_rounded, color: Colors.white, size: 24),
-                                    SizedBox(width: 8),
+                                    const Icon(Icons.delete_rounded, color: Colors.white, size: 24),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'EXCLUIR',
-                                      style: TextStyle(
+                                      AppStrings.of(context).delete,
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
                                         fontWeight: FontWeight.w900,
@@ -359,6 +362,29 @@ class _TriageCardState extends State<TriageCard>
       );
     }
 
+    if (widget.item.assetEntity != null) {
+      return AssetEntityImage(
+        widget.item.assetEntity!,
+        isOriginal: false,
+        thumbnailSize: const ThumbnailSize(1080, 1920),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey.shade900,
+          child: const Center(
+            child: Icon(Icons.broken_image_rounded, size: 64, color: Colors.white38),
+          ),
+        ),
+      );
+    }
+
     if (widget.item.mockImageUrl != null) {
       return Image.network(
         widget.item.mockImageUrl!,
@@ -368,7 +394,7 @@ class _TriageCardState extends State<TriageCard>
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(strokeWidth: 2),
           );
         },
       );

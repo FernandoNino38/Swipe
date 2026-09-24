@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:photo_manager/photo_manager.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:provider/provider.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
 import '../../domain/models/triage_item.dart';
@@ -17,14 +20,15 @@ class ReviewScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final controller = context.watch<TriageController>();
     final queue = controller.softDeleteQueue;
+    final strings = AppStrings.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Revisão da Lixeira'),
+        title: Text(strings.reviewTrashTitle),
         centerTitle: true,
       ),
       body: queue.isEmpty
-          ? _buildEmptyState(context, colorScheme)
+          ? _buildEmptyState(context, colorScheme, strings)
           : Column(
               children: [
                 // Banner Resumo de Espaço Recuperável M3
@@ -58,7 +62,7 @@ class ReviewScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${queue.length} fotos para exclusão',
+                              strings.photosForDeletion(queue.length),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onErrorContainer,
@@ -66,7 +70,7 @@ class ReviewScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Liberará ${controller.formattedReclaimableStorage} de armazenamento',
+                              strings.willFreeStorage(controller.formattedReclaimableStorage),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onErrorContainer.withValues(alpha: 0.85),
                               ),
@@ -110,10 +114,10 @@ class ReviewScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
                         ),
                       ),
-                      onPressed: () => _confirmHardDelete(context, controller),
+                      onPressed: () => _confirmHardDelete(context, controller, strings),
                       icon: const Icon(Icons.delete_forever_rounded),
                       label: Text(
-                        'Excluir Definitivamente (${controller.formattedReclaimableStorage})',
+                        strings.permanentlyDeleteBtn(controller.formattedReclaimableStorage),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
@@ -124,7 +128,11 @@ class ReviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    ColorScheme colorScheme,
+    AppStrings strings,
+  ) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -137,15 +145,15 @@ class ReviewScreen extends StatelessWidget {
               color: colorScheme.primary,
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Nenhuma foto na lixeira',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              strings.emptyTrashTitle,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'As fotos descartadas deslizando para a esquerda aparecerão aqui para sua confirmação antes da exclusão física.',
+            Text(
+              strings.emptyTrashDesc,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -230,10 +238,26 @@ class ReviewScreen extends StatelessWidget {
   }
 
   Widget _buildItemThumbnail(TriageItem item) {
+    if (item.assetEntity != null) {
+      return AssetEntityImage(
+        item.assetEntity!,
+        isOriginal: false,
+        thumbnailSize: const ThumbnailSize(300, 300),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Container(
+          color: Colors.grey.shade800,
+          child: const Icon(Icons.broken_image, color: Colors.white54),
+        ),
+      );
+    }
     if (item.mockImageUrl != null) {
       return Image.network(
         item.mockImageUrl!,
         fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Container(
+          color: Colors.grey.shade800,
+          child: const Icon(Icons.broken_image, color: Colors.white54),
+        ),
       );
     }
     return Container(
@@ -245,26 +269,29 @@ class ReviewScreen extends StatelessWidget {
   Future<void> _confirmHardDelete(
     BuildContext context,
     TriageController controller,
+    AppStrings strings,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Exclusão Definitiva'),
+        title: Text(strings.confirmDeleteTitle),
         content: Text(
-          'Deseja autorizar a exclusão física de ${controller.softDeleteCount} fotos? '
-          'Esta ação liberará ${controller.formattedReclaimableStorage} do armazenamento do aparelho e solicitará a confirmação nativa do sistema operacional.',
+          strings.confirmDeleteMessage(
+            controller.softDeleteCount,
+            controller.formattedReclaimableStorage,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(strings.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sim, Excluir'),
+            child: Text(strings.yesDelete),
           ),
         ],
       ),
@@ -276,9 +303,7 @@ class ReviewScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success
-                  ? 'Fotos excluídas com sucesso!'
-                  : 'Falha ou cancelamento na exclusão pelo sistema.',
+              success ? strings.deleteSuccess : strings.deleteFailed,
             ),
           ),
         );

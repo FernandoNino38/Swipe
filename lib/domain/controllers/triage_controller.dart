@@ -30,6 +30,9 @@ class TriageController extends ChangeNotifier {
   String? _errorMessage;
   MediaPermissionStatus _permissionStatus = MediaPermissionStatus.denied;
 
+  // Suporte a seleção dinâmica de idioma (null = padrão do sistema)
+  Locale? _customLocale;
+
   // ColorScheme extraído dinamicamente da foto ativa (M3 Contextual Dynamic Color)
   ColorScheme? _contextualColorScheme;
 
@@ -43,6 +46,21 @@ class TriageController extends ChangeNotifier {
   SlidingWindowCache get cache => _cache;
   List<GalleryAlbum> get availableAlbums => List.unmodifiable(_availableAlbums);
   GalleryAlbum? get selectedAlbum => _selectedAlbum;
+  Locale? get customLocale => _customLocale;
+
+  void toggleLocale() {
+    if (_customLocale?.languageCode == 'en') {
+      _customLocale = const Locale('pt', 'BR');
+    } else {
+      _customLocale = const Locale('en', 'US');
+    }
+    notifyListeners();
+  }
+
+  void setLocale(Locale? locale) {
+    _customLocale = locale;
+    notifyListeners();
+  }
 
   TriageItem? get currentItem =>
       (_currentIndex >= 0 && _currentIndex < _items.length)
@@ -58,6 +76,7 @@ class TriageController extends ChangeNotifier {
   List<TriageItem> get softDeleteQueue => List.unmodifiable(_softDeleteQueue);
   int get softDeleteCount => _softDeleteQueue.length;
   int get keptCount => _keptItems.length;
+  int get favoritesCount => _albumAssignments['favorites']?.length ?? 0;
   int get totalCards => _items.length;
 
   /// Total de bytes em fila de exclusão para liberação de armazenamento
@@ -177,6 +196,23 @@ class TriageController extends ChangeNotifier {
     );
 
     _advanceDeck();
+  }
+
+  /// Adiciona a foto ativa aos Favoritos e avança o baralho
+  Future<void> favoriteCurrentPhoto() async {
+    final item = currentItem;
+    if (item == null) return;
+
+    final favAlbum = AlbumItem.defaultAlbums.firstWhere(
+      (a) => a.id == 'favorites',
+      orElse: () => const AlbumItem(
+        id: 'favorites',
+        name: 'Favoritos',
+        icon: Icons.favorite_rounded,
+      ),
+    );
+
+    await moveToAlbum(favAlbum);
   }
 
   /// Ação de Rodapé: Desfazer (Undo)

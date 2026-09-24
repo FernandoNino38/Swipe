@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
 
@@ -31,6 +32,7 @@ class AlbumSelectionSheet extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final albums = controller.availableAlbums;
     final selected = controller.selectedAlbum;
+    final strings = AppStrings.of(context);
 
     return SafeArea(
       child: Padding(
@@ -45,14 +47,14 @@ class AlbumSelectionSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selecionar Álbum',
+                    strings.selectAlbum,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Escolha a pasta da galeria que deseja triar:',
+                    strings.selectAlbumPrompt,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -62,10 +64,10 @@ class AlbumSelectionSheet extends StatelessWidget {
             ),
             const Divider(),
             if (albums.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32),
+              Padding(
+                padding: const EdgeInsets.all(32),
                 child: Center(
-                  child: Text('Nenhum álbum encontrado no dispositivo.'),
+                  child: Text(strings.noAlbumsFound),
                 ),
               )
             else
@@ -119,7 +121,7 @@ class AlbumSelectionSheet extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              '${album.assetCount} fotos',
+                              strings.albumPhotos(album.assetCount),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),

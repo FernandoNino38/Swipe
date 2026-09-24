@@ -60,13 +60,16 @@ class _PhotoTriageAppView extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           themeMode: ThemeMode.system,
+          locale: controller.customLocale,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: const [
+            Locale('pt'),
             Locale('pt', 'BR'),
+            Locale('en'),
             Locale('en', 'US'),
           ],
           home: const DeckScreen(),

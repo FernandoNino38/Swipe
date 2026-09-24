@@ -85,5 +85,30 @@ void main() {
       controller.restoreFromSoftDelete(initialItem);
       expect(controller.softDeleteCount, equals(0));
     });
+
+    test('Favorite current photo adds to favorites and advances deck, undo reverts it', () async {
+      final initialItem = controller.currentItem!;
+      expect(controller.favoritesCount, equals(0));
+
+      await controller.favoriteCurrentPhoto();
+      expect(controller.currentIndex, equals(1));
+      expect(controller.favoritesCount, equals(1));
+      expect(controller.canUndo, isTrue);
+
+      await controller.undo();
+      expect(controller.currentIndex, equals(0));
+      expect(controller.currentItem!.id, equals(initialItem.id));
+      expect(controller.favoritesCount, equals(0));
+    });
+
+    test('Locale switcher toggles between Portuguese and English', () {
+      expect(controller.customLocale, isNull);
+
+      controller.toggleLocale();
+      expect(controller.customLocale?.languageCode, equals('en'));
+
+      controller.toggleLocale();
+      expect(controller.customLocale?.languageCode, equals('pt'));
+    });
   });
 }

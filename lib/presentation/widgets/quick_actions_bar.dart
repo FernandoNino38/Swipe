@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
-import '../../domain/models/album_item.dart';
 
-/// Barra de ações rápidas no rodapé da visualização principal:
-/// - Atalhos de pastas rápidas (Chips expressivos com rolagem horizontal)
-/// - Botões de ação direta (Excluir, Desfazer / Undo, Manter)
+/// Barra de ações de rodapé com os 3 controles primários:
+/// - Excluir / Delete (Esquerda, vermelho)
+/// - Desfazer / Undo (Centro, pill)
+/// - Manter / Keep (Direita, verde)
 class QuickActionsBar extends StatelessWidget {
   final bool canUndo;
   final VoidCallback onUndo;
   final VoidCallback onSwipeLeft;
   final VoidCallback onSwipeRight;
-  final ValueChanged<AlbumItem> onSelectAlbum;
 
   const QuickActionsBar({
     super.key,
@@ -18,111 +18,81 @@ class QuickActionsBar extends StatelessWidget {
     required this.onUndo,
     required this.onSwipeLeft,
     required this.onSwipeRight,
-    required this.onSelectAlbum,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final strings = AppStrings.of(context);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Linha 1: Pastas Rápidas (Chips M3 Expressive)
-        SizedBox(
-          height: 44,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: AlbumItem.defaultAlbums.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final album = AlbumItem.defaultAlbums[index];
-              return ActionChip(
-                avatar: Icon(
-                  album.icon,
-                  size: 18,
-                  color: album.accentColor ?? colorScheme.primary,
-                ),
-                label: Text(album.name),
-                onPressed: () => onSelectAlbum(album),
-                backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.75),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.chipBorderRadius),
-                  side: BorderSide(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                  ),
-                ),
-              );
-            },
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Botão Excluir (Soft-Delete) - Destaque Vermelho
+          IconButton.filledTonal(
+            iconSize: 32,
+            padding: const EdgeInsets.all(18),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFFFFDAD6),
+              foregroundColor: const Color(0xFFBA1A1A),
+              shape: const CircleBorder(),
+              elevation: 2,
+            ),
+            icon: const Icon(Icons.close_rounded),
+            tooltip: strings.deleteTooltip,
+            onPressed: onSwipeLeft,
           ),
-        ),
 
-        const SizedBox(height: 12),
-
-        // Linha 2: Controles Primários (Excluir, Desfazer, Manter)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Botão Excluir (Soft-Delete)
-              IconButton.filledTonal(
-                iconSize: 28,
-                padding: const EdgeInsets.all(16),
-                style: IconButton.styleFrom(
-                  backgroundColor: colorScheme.errorContainer,
-                  foregroundColor: colorScheme.onErrorContainer,
-                  shape: const CircleBorder(),
-                ),
-                icon: const Icon(Icons.close_rounded),
-                tooltip: 'Descartar / Excluir',
-                onPressed: onSwipeLeft,
+          // Botão Desfazer (Undo) M3 Expressivo - Centro
+          FilledButton.tonalIcon(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
               ),
-
-              // Botão Desfazer (Undo) M3 Expressivo
-              FilledButton.tonalIcon(
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
-                  ),
-                  backgroundColor: canUndo
-                      ? colorScheme.secondaryContainer
-                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                ),
-                onPressed: canUndo ? onUndo : null,
-                icon: Icon(
-                  Icons.undo_rounded,
-                  color: canUndo ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                ),
-                label: Text(
-                  'Desfazer',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: canUndo ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                  ),
-                ),
+              backgroundColor: canUndo
+                  ? colorScheme.secondaryContainer
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            ),
+            onPressed: canUndo ? onUndo : null,
+            icon: Icon(
+              Icons.undo_rounded,
+              size: 22,
+              color: canUndo
+                  ? colorScheme.onSecondaryContainer
+                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+            ),
+            label: Text(
+              strings.undo,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: canUndo
+                  ? colorScheme.onSecondaryContainer
+                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
               ),
-
-              // Botão Manter
-              IconButton.filledTonal(
-                iconSize: 28,
-                padding: const EdgeInsets.all(16),
-                style: IconButton.styleFrom(
-                  backgroundColor: colorScheme.primaryContainer,
-                  foregroundColor: colorScheme.onPrimaryContainer,
-                  shape: const CircleBorder(),
-                ),
-                icon: const Icon(Icons.check_rounded),
-                tooltip: 'Manter Foto',
-                onPressed: onSwipeRight,
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+
+          // Botão Manter - Destaque Verde
+          IconButton.filledTonal(
+            iconSize: 32,
+            padding: const EdgeInsets.all(18),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFFC8E6C9),
+              foregroundColor: const Color(0xFF1B5E20),
+              shape: const CircleBorder(),
+              elevation: 2,
+            ),
+            icon: const Icon(Icons.check_rounded),
+            tooltip: strings.keepTooltip,
+            onPressed: onSwipeRight,
+          ),
+        ],
+      ),
     );
   }
 }

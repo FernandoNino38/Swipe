@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import '../../core/localization/app_strings.dart';
 import '../../domain/models/triage_item.dart';
 
 /// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom)
@@ -31,6 +33,7 @@ class PhotoDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -83,7 +86,7 @@ class PhotoDetailDialog extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Detalhes da Imagem',
+                        strings.imageDetails,
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -100,12 +103,12 @@ class PhotoDetailDialog extends StatelessWidget {
                   ),
                   const Divider(color: Colors.white24, height: 16),
                   Text(
-                    'Data: ${item.formattedDate} às ${item.formattedTime}',
+                    '${strings.date}: ${item.formattedDate} ${strings.atTime} ${item.formattedTime}',
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Dimensões: ${item.formattedResolution}',
+                    '${strings.dimensions}: ${item.formattedResolution}',
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
@@ -122,6 +125,17 @@ class PhotoDetailDialog extends StatelessWidget {
       return Image.memory(
         cachedBytes!,
         fit: BoxFit.contain,
+      );
+    }
+    if (item.assetEntity != null) {
+      return AssetEntityImage(
+        item.assetEntity!,
+        isOriginal: true,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+        },
       );
     }
     if (item.mockImageUrl != null) {

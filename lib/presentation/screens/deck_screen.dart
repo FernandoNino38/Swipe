@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
 import '../widgets/album_selection_sheet.dart';
@@ -9,7 +10,8 @@ import 'photo_detail_dialog.dart';
 import 'review_screen.dart';
 
 /// Tela principal de triagem em tela cheia com baralho de cards (Tinder style),
-/// seletor de álbum M3 Expressive, barra de progresso linear e ações de rodapé.
+/// indicadores laterais vermelho/verde (excluir/manter), botão de favoritos no topo,
+/// seletor de álbum M3 Expressive, alternância de idioma e ações de rodapé.
 class DeckScreen extends StatelessWidget {
   const DeckScreen({super.key});
 
@@ -18,6 +20,7 @@ class DeckScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final controller = context.watch<TriageController>();
+    final strings = AppStrings.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +37,7 @@ class DeckScreen extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        controller.selectedAlbum?.name ?? 'Triagem de Fotos',
+                        controller.selectedAlbum?.name ?? strings.appTitle,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
@@ -45,7 +48,10 @@ class DeckScreen extends StatelessWidget {
                 ),
                 if (controller.totalCards > 0)
                   Text(
-                    '${(controller.currentIndex + 1).clamp(1, controller.totalCards)} de ${controller.totalCards} fotos',
+                    strings.photosCount(
+                      (controller.currentIndex + 1).clamp(1, controller.totalCards),
+                      controller.totalCards,
+                    ),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -65,9 +71,62 @@ class DeckScreen extends StatelessWidget {
           ),
         ),
         actions: [
+          // Alternador de Idioma (PT / EN)
+          IconButton(
+            tooltip: strings.isEnglish ? 'Mudar para Português' : 'Switch to English',
+            icon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Text(
+                strings.isEnglish ? 'EN' : 'PT',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            onPressed: () => controller.toggleLocale(),
+          ),
+
+          // Botão de Favoritos no topo (ao lado da lixeira)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Badge(
+              isLabelVisible: controller.favoritesCount > 0,
+              label: Text(
+                '${controller.favoritesCount}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Colors.pinkAccent,
+              child: IconButton.filledTonal(
+                tooltip: strings.favoriteTooltip,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFFCE4EC),
+                  foregroundColor: const Color(0xFFC2185B),
+                ),
+                icon: const Icon(Icons.favorite_rounded),
+                onPressed: controller.currentItem != null
+                    ? () {
+                        controller.favoriteCurrentPhoto();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            duration: const Duration(seconds: 1),
+                            content: Text(strings.addedToFavorites),
+                          ),
+                        );
+                      }
+                    : null,
+              ),
+            ),
+          ),
+
           // Botão com Badge para a Grade de Revisão da Lixeira
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 12, left: 4),
             child: Badge(
               isLabelVisible: controller.softDeleteCount > 0,
               label: Text(
@@ -76,7 +135,7 @@ class DeckScreen extends StatelessWidget {
               ),
               backgroundColor: colorScheme.error,
               child: IconButton.filledTonal(
-                tooltip: 'Revisar Lixeira (${controller.formattedReclaimableStorage})',
+                tooltip: '${strings.reviewTrash} (${controller.formattedReclaimableStorage})',
                 icon: const Icon(Icons.delete_outline_rounded),
                 onPressed: () {
                   Navigator.of(context).push(
@@ -96,7 +155,7 @@ class DeckScreen extends StatelessWidget {
             : controller.hasMoreCards
                 ? Column(
                     children: [
-                      // Viewport central do baralho de cards
+                      // Viewport central do baralho de cards com indicadores laterais
                       Expanded(
                         child: Stack(
                           alignment: Alignment.center,
@@ -144,30 +203,139 @@ class DeckScreen extends StatelessWidget {
                                   );
                                 },
                               ),
+
+                            // Indicador lateral esquerdo: Borda Vermelha (Excluir)
+                            Positioned(
+                              left: 0,
+                              top: 24,
+                              bottom: 24,
+                              child: IgnorePointer(
+                                child: Container(
+                                  width: 4,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFBA1A1A).withValues(alpha: 0.7),
+                                    borderRadius: const BorderRadius.horizontal(
+                                      right: Radius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 8,
+                              child: IgnorePointer(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFDAD6).withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFFBA1A1A).withValues(alpha: 0.4),
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withValues(alpha: 0.15),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.close_rounded, color: Color(0xFFBA1A1A), size: 20),
+                                      const SizedBox(height: 4),
+                                      RotatedBox(
+                                        quarterTurns: 3,
+                                        child: Text(
+                                          strings.delete,
+                                          style: const TextStyle(
+                                            color: Color(0xFFBA1A1A),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Indicador lateral direito: Borda Verde (Manter)
+                            Positioned(
+                              right: 0,
+                              top: 24,
+                              bottom: 24,
+                              child: IgnorePointer(
+                                child: Container(
+                                  width: 4,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1B5E20).withValues(alpha: 0.7),
+                                    borderRadius: const BorderRadius.horizontal(
+                                      left: Radius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 8,
+                              child: IgnorePointer(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFC8E6C9).withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFF1B5E20).withValues(alpha: 0.4),
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.green.withValues(alpha: 0.15),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.check_rounded, color: Color(0xFF1B5E20), size: 20),
+                                      const SizedBox(height: 4),
+                                      RotatedBox(
+                                        quarterTurns: 3,
+                                        child: Text(
+                                          strings.keep,
+                                          style: const TextStyle(
+                                            color: Color(0xFF1B5E20),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
 
-                      // Rodapé com Desfazer e Pastas Rápidas
+                      // Rodapé com os 3 botões primários: Excluir (Vermelho), Desfazer, Manter (Verde)
                       QuickActionsBar(
                         canUndo: controller.canUndo,
                         onUndo: controller.undo,
                         onSwipeLeft: controller.swipeLeft,
                         onSwipeRight: controller.swipeRight,
-                        onSelectAlbum: (album) {
-                          controller.moveToAlbum(album);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              duration: const Duration(seconds: 1),
-                              content: Text('Foto movida para o álbum "${album.name}"'),
-                            ),
-                          );
-                        },
                       ),
                       const SizedBox(height: 8),
                     ],
                   )
-                : _buildSessionCompletedView(context, controller, colorScheme),
+                : _buildSessionCompletedView(context, controller, colorScheme, strings),
       ),
     );
   }
@@ -176,6 +344,7 @@ class DeckScreen extends StatelessWidget {
     BuildContext context,
     TriageController controller,
     ColorScheme colorScheme,
+    AppStrings strings,
   ) {
     return Center(
       child: Padding(
@@ -197,16 +366,17 @@ class DeckScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Sessão Concluída!',
+              strings.sessionComplete,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Todas as fotos foram avaliadas.\n'
-              '${controller.softDeleteCount} fotos marcadas para exclusão '
-              '(${controller.formattedReclaimableStorage} de espaço a liberar).',
+              strings.sessionSummary(
+                controller.softDeleteCount,
+                controller.formattedReclaimableStorage,
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
@@ -226,7 +396,7 @@ class DeckScreen extends StatelessWidget {
                 );
               },
               icon: const Icon(Icons.delete_sweep_rounded),
-              label: const Text('Revisar e Liberar Espaço'),
+              label: Text(strings.reviewAndFreeBtn),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -238,7 +408,7 @@ class DeckScreen extends StatelessWidget {
               ),
               onPressed: () => controller.initialize(),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Reiniciar Triagem'),
+              label: Text(strings.restartTriageBtn),
             ),
             const SizedBox(height: 12),
             TextButton.icon(
@@ -250,7 +420,7 @@ class DeckScreen extends StatelessWidget {
               ),
               onPressed: () => AlbumSelectionSheet.show(context, controller),
               icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Trocar de Álbum'),
+              label: Text(strings.changeAlbumBtn),
             ),
           ],
         ),
