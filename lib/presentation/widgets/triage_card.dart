@@ -7,8 +7,10 @@ import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/models/triage_item.dart';
 import 'metadata_pill.dart';
 
+typedef DragProgressCallback = void Function(double progress);
+
 /// Card interativo de triagem com física de arrasto, rotação angular proporcional,
-/// badges táteis de decisão e retorno elástico (M3 Expressive Motion).
+/// badges táteis de decisão, transição fluida para o próximo card e retorno elástico (M3 Expressive Motion).
 class TriageCard extends StatefulWidget {
   final TriageItem item;
   final Uint8List? cachedBytes;
@@ -16,6 +18,7 @@ class TriageCard extends StatefulWidget {
   final VoidCallback onSwipeRight;
   final VoidCallback onSwipeLeft;
   final VoidCallback onTapDetail;
+  final DragProgressCallback? onDragProgress;
 
   const TriageCard({
     super.key,
@@ -25,32 +28,61 @@ class TriageCard extends StatefulWidget {
     required this.onSwipeRight,
     required this.onSwipeLeft,
     required this.onTapDetail,
+    this.onDragProgress,
   });
 
   @override
-  State<TriageCard> createState() => _TriageCardState();
+  State<TriageCard> createState() => TriageCardState();
 }
 
-class _TriageCardState extends State<TriageCard>
+class TriageCardState extends State<TriageCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<Offset> _offsetAnimation;
   late Animation<double> _rotationAnimation;
+  late Animation<double> _opacityAnimation;
 
   Offset _dragOffset = Offset.zero;
   double _dragAngle = 0.0;
+  double _cardOpacity = 1.0;
   bool _isExiting = false;
 
-  static const double swipeThreshold = 130.0;
-  static const double velocityThreshold = 750.0;
+  static const double swipeThreshold = 120.0;
+  static const double velocityThreshold = 650.0;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 320),
+      duration: const Duration(milliseconds: 280),
     );
+
+    _offsetAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(_animController);
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(_animController);
+    _opacityAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(_animController);
+
+    _animController.addListener(() {
+      setState(() {
+        _dragOffset = _offsetAnimation.value;
+        _dragAngle = _rotationAnimation.value;
+        _cardOpacity = _opacityAnimation.value;
+      });
+      final progress = (_dragOffset.dx / swipeThreshold).clamp(-1.0, 1.0);
+      widget.onDragProgress?.call(progress);
+    });
+  }
+
+  @override
+  void didUpdateWidget(TriageCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item.id != oldWidget.item.id) {
+      _animController.stop();
+      _isExiting = false;
+      _dragOffset = Offset.zero;
+      _dragAngle = 0.0;
+      _cardOpacity = 1.0;
+    }
   }
 
   @override
@@ -64,9 +96,12 @@ class _TriageCardState extends State<TriageCard>
 
     setState(() {
       _dragOffset += details.delta;
-      // Rotação proporcional ao deslocamento horizontal
+      // Rotação proporcional contínua ao deslocamento horizontal
       _dragAngle = (_dragOffset.dx / 320.0).clamp(-0.25, 0.25);
     });
+
+    final progress = (_dragOffset.dx / swipeThreshold).clamp(-1.0, 1.0);
+    widget.onDragProgress?.call(progress);
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -76,19 +111,85 @@ class _TriageCardState extends State<TriageCard>
     final vx = details.velocity.pixelsPerSecond.dx;
 
     if (dx > swipeThreshold || vx > velocityThreshold) {
-      _flingCard(1.0); // Fuga para a direita (Manter)
+      _flingCard(1.0, velocityX: vx); // Fuga para a direita (Manter)
     } else if (dx < -swipeThreshold || vx < -velocityThreshold) {
-      _flingCard(-1.0); // Fuga para a esquerda (Excluir)
+      _flingCard(-1.0, velocityX: vx); // Fuga para a esquerda (Excluir)
     } else {
       _snapBack(); // Retorno elástico à posição central
     }
   }
 
-  void _flingCard(double direction) {
+  /// Dispara a animação programática de descarte para a esquerda (Excluir)
+  void animateSwipeLeft() {
+    if (_isExiting) return;
+    _flingCard(-1.0);
+  }
+
+  /// Dispara a animação programática de descarte para a direita (Manter)
+  void animateSwipeRight() {
+    if (_isExiting) return;
+    _flingCard(1.0);
+  }
+
+  /// Dispara a animação programática de favoritar (voa em direção ao topo)
+  void animateFavorite(VoidCallback onComplete) {
+    if (_isExiting) return;
     _isExiting = true;
+
+    _offsetAnimation = Tween<Offset>(
+      begin: _dragOffset,
+      end: const Offset(0, -650),
+    ).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.fastOutSlowIn,
+      ),
+    );
+
+    _rotationAnimation = Tween<double>(
+      begin: _dragAngle,
+      end: 0.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 0.0),
+        weight: 60,
+      ),
+    ]).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    _animController.duration = const Duration(milliseconds: 300);
+    _animController.forward(from: 0.0).then((_) {
+      if (mounted) {
+        widget.onDragProgress?.call(1.0);
+        onComplete();
+      }
+    });
+  }
+
+  void _flingCard(double direction, {double velocityX = 0}) {
+    if (_isExiting) return;
+    _isExiting = true;
+
     final screenWidth = MediaQuery.of(context).size.width;
-    final targetOffset = Offset(direction * (screenWidth + 250), _dragOffset.dy * 1.2);
-    final targetAngle = direction * 0.45;
+    final targetX = direction * (screenWidth + 220);
+    final targetY = _dragOffset.dy + (_dragOffset.dy == 0 ? 30.0 : _dragOffset.dy.sign * 60.0);
+    final targetOffset = Offset(targetX, targetY);
+    final targetAngle = direction * 0.38;
 
     _offsetAnimation = Tween<Offset>(
       begin: _dragOffset,
@@ -106,15 +207,39 @@ class _TriageCardState extends State<TriageCard>
     ).animate(
       CurvedAnimation(
         parent: _animController,
-        curve: Curves.easeOut,
+        curve: Curves.easeOutCubic,
       ),
     );
 
-    _animController.forward().then((_) {
-      if (direction > 0) {
-        widget.onSwipeRight();
-      } else {
-        widget.onSwipeLeft();
+    // Fade sutil nos últimos 40% da trajetória de saída para evitar cortes abruptos
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 60,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 0.1),
+        weight: 40,
+      ),
+    ]).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeInQuad,
+      ),
+    );
+
+    // Duração responsiva à velocidade do arremesso do usuário
+    final durationMs = (velocityX.abs() > 1500) ? 220 : 300;
+    _animController.duration = Duration(milliseconds: durationMs);
+
+    _animController.forward(from: 0.0).then((_) {
+      if (mounted) {
+        widget.onDragProgress?.call(direction);
+        if (direction > 0) {
+          widget.onSwipeRight();
+        } else {
+          widget.onSwipeLeft();
+        }
       }
     });
   }
@@ -126,7 +251,7 @@ class _TriageCardState extends State<TriageCard>
     ).animate(
       CurvedAnimation(
         parent: _animController,
-        curve: Curves.easeOutBack, // Curva de mola elástica M3
+        curve: Curves.easeOutBack, // Retorno elástico de mola M3 Expressive
       ),
     );
 
@@ -140,208 +265,241 @@ class _TriageCardState extends State<TriageCard>
       ),
     );
 
-    _animController.reset();
-    _animController.addListener(() {
-      setState(() {
-        _dragOffset = _offsetAnimation.value;
-        _dragAngle = _rotationAnimation.value;
-      });
-    });
+    _opacityAnimation = Tween<double>(
+      begin: _cardOpacity,
+      end: 1.0,
+    ).animate(_animController);
 
-    _animController.forward();
+    _animController.duration = const Duration(milliseconds: 320);
+    _animController.forward(from: 0.0).then((_) {
+      if (mounted) {
+        widget.onDragProgress?.call(0.0);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final double dragProgress = (_dragOffset.dx / swipeThreshold).clamp(-1.0, 1.0);
+    final strings = AppStrings.of(context);
 
     return GestureDetector(
-      onPanUpdate: _onPanUpdate,
-      onPanEnd: _onPanEnd,
+      onPanUpdate: widget.isTopCard ? _onPanUpdate : null,
+      onPanEnd: widget.isTopCard ? _onPanEnd : null,
       onTap: widget.onTapDetail,
-      child: Transform.translate(
-        offset: _dragOffset,
-        child: Transform.rotate(
-          angle: _dragAngle,
-          alignment: Alignment.bottomCenter,
-          child: Hero(
-            tag: 'photo_${widget.item.id}',
-            child: Material(
-              type: MaterialType.transparency,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.18),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Imagem da Foto
-                      _buildImageContent(),
-
-                      // Degradê de alto contraste na base para leitura dos metadados M3
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 180,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.85),
-                                Colors.black.withValues(alpha: 0.4),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
+      child: Opacity(
+        opacity: _cardOpacity.clamp(0.0, 1.0),
+        child: Transform.translate(
+          offset: _dragOffset,
+          child: Transform.rotate(
+            angle: _dragAngle,
+            alignment: Alignment.bottomCenter,
+            child: Hero(
+              tag: 'photo_${widget.item.id}',
+              child: Material(
+                type: MaterialType.transparency,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.22),
+                        blurRadius: 22,
+                        offset: const Offset(0, 10),
+                        spreadRadius: 2,
                       ),
-
-                      // Overlay de Metadados e Informações do Arquivo
-                      Positioned(
-                        left: 20,
-                        right: 20,
-                        bottom: 24,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.item.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              children: [
-                                MetadataPill(
-                                  icon: Icons.calendar_today_rounded,
-                                  label: widget.item.formattedDate,
-                                ),
-                                MetadataPill(
-                                  icon: Icons.access_time_rounded,
-                                  label: widget.item.formattedTime,
-                                ),
-                                MetadataPill(
-                                  icon: Icons.sd_card_rounded,
-                                  label: widget.item.formattedSize,
-                                ),
-                                MetadataPill(
-                                  icon: Icons.aspect_ratio_rounded,
-                                  label: widget.item.formattedResolution,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Badge Dinâmico de Decisão: "MANTER" (Direita)
-                      if (dragProgress > 0)
-                        Positioned(
-                          top: 40,
-                          left: 32,
-                          child: Opacity(
-                            opacity: dragProgress.abs().clamp(0.0, 1.0),
-                            child: Transform.rotate(
-                              angle: -0.2,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: M3ExpressiveTheme.positiveActionColor,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppStrings.of(context).keep,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // Badge Dinâmico de Decisão: "EXCLUIR" (Esquerda)
-                      if (dragProgress < 0)
-                        Positioned(
-                          top: 40,
-                          right: 32,
-                          child: Opacity(
-                            opacity: dragProgress.abs().clamp(0.0, 1.0),
-                            child: Transform.rotate(
-                              angle: 0.2,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: M3ExpressiveTheme.negativeActionColor,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.delete_rounded, color: Colors.white, size: 24),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppStrings.of(context).delete,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                     ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Imagem da Foto
+                        _buildImageContent(),
+
+                        // Degradê de alto contraste na base para leitura dos metadados M3
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 180,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.85),
+                                  Colors.black.withValues(alpha: 0.4),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Overlay de Metadados e Informações do Arquivo
+                        Positioned(
+                          left: 20,
+                          right: 20,
+                          bottom: 24,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.item.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(0, 1),
+                                      blurRadius: 4,
+                                      color: Colors.black54,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: [
+                                  MetadataPill(
+                                    icon: Icons.calendar_today_rounded,
+                                    label: widget.item.formattedDate,
+                                  ),
+                                  MetadataPill(
+                                    icon: Icons.access_time_rounded,
+                                    label: widget.item.formattedTime,
+                                  ),
+                                  MetadataPill(
+                                    icon: Icons.sd_card_rounded,
+                                    label: widget.item.formattedSize,
+                                  ),
+                                  MetadataPill(
+                                    icon: Icons.aspect_ratio_rounded,
+                                    label: widget.item.formattedResolution,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Badge Dinâmico de Decisão: "MANTER" (Direita)
+                        if (dragProgress > 0)
+                          Positioned(
+                            top: 40,
+                            left: 32,
+                            child: Opacity(
+                              opacity: dragProgress.abs().clamp(0.0, 1.0),
+                              child: Transform.scale(
+                                scale: 0.85 + (0.15 * dragProgress.abs().clamp(0.0, 1.0)),
+                                child: Transform.rotate(
+                                  angle: -0.2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: M3ExpressiveTheme.positiveActionColor,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.5,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.25),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          strings.keep,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // Badge Dinâmico de Decisão: "EXCLUIR" (Esquerda)
+                        if (dragProgress < 0)
+                          Positioned(
+                            top: 40,
+                            right: 32,
+                            child: Opacity(
+                              opacity: dragProgress.abs().clamp(0.0, 1.0),
+                              child: Transform.scale(
+                                scale: 0.85 + (0.15 * dragProgress.abs().clamp(0.0, 1.0)),
+                                child: Transform.rotate(
+                                  angle: 0.2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: M3ExpressiveTheme.negativeActionColor,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.5,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.25),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.delete_rounded, color: Colors.white, size: 24),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          strings.delete,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

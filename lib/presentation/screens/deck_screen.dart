@@ -9,11 +9,19 @@ import '../widgets/triage_card.dart';
 import 'photo_detail_dialog.dart';
 import 'review_screen.dart';
 
-/// Tela principal de triagem em tela cheia com baralho de cards (Tinder style),
-/// indicadores laterais vermelho/verde (excluir/manter), botão de favoritos no topo,
-/// seletor de álbum M3 Expressive, alternância de idioma e ações de rodapé.
-class DeckScreen extends StatelessWidget {
+/// Tela principal de triagem em tela cheia com baralho de cards dinâmico (M3 Expressive),
+/// transição física contínua entre cards, indicadores laterais responsivos vermelho/verde,
+/// atalho de favoritos no topo e ações de rodapé com animação fluida.
+class DeckScreen extends StatefulWidget {
   const DeckScreen({super.key});
+
+  @override
+  State<DeckScreen> createState() => _DeckScreenState();
+}
+
+class _DeckScreenState extends State<DeckScreen> {
+  final GlobalKey<TriageCardState> _topCardKey = GlobalKey<TriageCardState>();
+  double _dragProgress = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +29,16 @@ class DeckScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final controller = context.watch<TriageController>();
     final strings = AppStrings.of(context);
+
+    // Progresso relativo do arrasto para animação contínua da pilha de cards
+    final absP = _dragProgress.abs().clamp(0.0, 1.0);
+    final nextCardScale = 0.93 + (0.07 * absP);
+    final nextCardTranslateY = 18.0 * (1.0 - absP);
+    final nextCardOpacity = (0.65 + (0.35 * absP)).clamp(0.0, 1.0);
+
+    // Resposta visual dinâmica dos indicadores laterais
+    final redIntensity = (-_dragProgress).clamp(0.0, 1.0);
+    final greenIntensity = _dragProgress.clamp(0.0, 1.0);
 
     return Scaffold(
       appBar: AppBar(
@@ -111,13 +129,20 @@ class DeckScreen extends StatelessWidget {
                 icon: const Icon(Icons.favorite_rounded),
                 onPressed: controller.currentItem != null
                     ? () {
-                        controller.favoriteCurrentPhoto();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            duration: const Duration(seconds: 1),
-                            content: Text(strings.addedToFavorites),
-                          ),
-                        );
+                        if (_topCardKey.currentState != null) {
+                          _topCardKey.currentState!.animateFavorite(() {
+                            setState(() => _dragProgress = 0.0);
+                            controller.favoriteCurrentPhoto();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                duration: const Duration(seconds: 1),
+                                content: Text(strings.addedToFavorites),
+                              ),
+                            );
+                          });
+                        } else {
+                          controller.favoriteCurrentPhoto();
+                        }
                       }
                     : null,
               ),
@@ -155,19 +180,19 @@ class DeckScreen extends StatelessWidget {
             : controller.hasMoreCards
                 ? Column(
                     children: [
-                      // Viewport central do baralho de cards com indicadores laterais
+                      // Viewport central do baralho de cards com física contínua e indicadores
                       Expanded(
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Card N+1 (Próximo card levemente recuado para profundidade 3D)
+                            // Card N+1 (Próximo card - sobe e expande suavemente em tempo real durante o arraste)
                             if (controller.nextItem != null)
                               Transform.scale(
-                                scale: 0.94,
+                                scale: nextCardScale,
                                 child: Transform.translate(
-                                  offset: const Offset(0, 16),
+                                  offset: Offset(0, nextCardTranslateY),
                                   child: Opacity(
-                                    opacity: 0.65,
+                                    opacity: nextCardOpacity,
                                     child: TriageCard(
                                       item: controller.nextItem!,
                                       cachedBytes: controller.cache.getCachedBytes(
@@ -182,17 +207,30 @@ class DeckScreen extends StatelessWidget {
                                 ),
                               ),
 
-                            // Card N (Card ativo no topo com controle total de gestos)
+                            // Card N (Card ativo no topo com controle de gestos e animação)
                             if (controller.currentItem != null)
                               TriageCard(
-                                key: ValueKey(controller.currentItem!.id),
+                                key: _topCardKey,
                                 item: controller.currentItem!,
                                 cachedBytes: controller.cache.getCachedBytes(
                                   controller.currentItem!.id,
                                 ),
                                 isTopCard: true,
-                                onSwipeRight: controller.swipeRight,
-                                onSwipeLeft: controller.swipeLeft,
+                                onDragProgress: (progress) {
+                                  if (mounted) {
+                                    setState(() {
+                                      _dragProgress = progress;
+                                    });
+                                  }
+                                },
+                                onSwipeRight: () {
+                                  setState(() => _dragProgress = 0.0);
+                                  controller.swipeRight();
+                                },
+                                onSwipeLeft: () {
+                                  setState(() => _dragProgress = 0.0);
+                                  controller.swipeLeft();
+                                },
                                 onTapDetail: () {
                                   PhotoDetailDialog.show(
                                     context,
@@ -204,19 +242,31 @@ class DeckScreen extends StatelessWidget {
                                 },
                               ),
 
-                            // Indicador lateral esquerdo: Borda Vermelha (Excluir)
+                            // Indicador lateral esquerdo: Borda Vermelha (Excluir) - Reage ao gesto
                             Positioned(
                               left: 0,
                               top: 24,
                               bottom: 24,
                               child: IgnorePointer(
-                                child: Container(
-                                  width: 4,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 100),
+                                  width: 4.0 + (6.0 * redIntensity),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFBA1A1A).withValues(alpha: 0.7),
+                                    color: const Color(0xFFBA1A1A).withValues(
+                                      alpha: 0.5 + (0.5 * redIntensity),
+                                    ),
                                     borderRadius: const BorderRadius.horizontal(
                                       right: Radius.circular(4),
                                     ),
+                                    boxShadow: redIntensity > 0.1
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.red.withValues(alpha: 0.35 * redIntensity),
+                                              blurRadius: 12,
+                                              spreadRadius: 2,
+                                            ),
+                                          ]
+                                        : null,
                                   ),
                                 ),
                               ),
@@ -224,58 +274,80 @@ class DeckScreen extends StatelessWidget {
                             Positioned(
                               left: 8,
                               child: IgnorePointer(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFDAD6).withValues(alpha: 0.85),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: const Color(0xFFBA1A1A).withValues(alpha: 0.4),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.red.withValues(alpha: 0.15),
-                                        blurRadius: 8,
+                                child: AnimatedScale(
+                                  scale: 1.0 + (0.12 * redIntensity),
+                                  duration: const Duration(milliseconds: 120),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFDAD6).withValues(
+                                        alpha: 0.8 + (0.2 * redIntensity),
                                       ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.close_rounded, color: Color(0xFFBA1A1A), size: 20),
-                                      const SizedBox(height: 4),
-                                      RotatedBox(
-                                        quarterTurns: 3,
-                                        child: Text(
-                                          strings.delete,
-                                          style: const TextStyle(
-                                            color: Color(0xFFBA1A1A),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 1.5,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: const Color(0xFFBA1A1A).withValues(
+                                          alpha: 0.4 + (0.5 * redIntensity),
+                                        ),
+                                        width: 1.5 + (0.5 * redIntensity),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.red.withValues(
+                                            alpha: 0.15 + (0.25 * redIntensity),
+                                          ),
+                                          blurRadius: 8 + (8 * redIntensity),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.close_rounded, color: Color(0xFFBA1A1A), size: 20),
+                                        const SizedBox(height: 4),
+                                        RotatedBox(
+                                          quarterTurns: 3,
+                                          child: Text(
+                                            strings.delete,
+                                            style: const TextStyle(
+                                              color: Color(0xFFBA1A1A),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 1.5,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
 
-                            // Indicador lateral direito: Borda Verde (Manter)
+                            // Indicador lateral direito: Borda Verde (Manter) - Reage ao gesto
                             Positioned(
                               right: 0,
                               top: 24,
                               bottom: 24,
                               child: IgnorePointer(
-                                child: Container(
-                                  width: 4,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 100),
+                                  width: 4.0 + (6.0 * greenIntensity),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF1B5E20).withValues(alpha: 0.7),
+                                    color: const Color(0xFF1B5E20).withValues(
+                                      alpha: 0.5 + (0.5 * greenIntensity),
+                                    ),
                                     borderRadius: const BorderRadius.horizontal(
                                       left: Radius.circular(4),
                                     ),
+                                    boxShadow: greenIntensity > 0.1
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.green.withValues(alpha: 0.35 * greenIntensity),
+                                              blurRadius: 12,
+                                              spreadRadius: 2,
+                                            ),
+                                          ]
+                                        : null,
                                   ),
                                 ),
                               ),
@@ -283,40 +355,50 @@ class DeckScreen extends StatelessWidget {
                             Positioned(
                               right: 8,
                               child: IgnorePointer(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFC8E6C9).withValues(alpha: 0.85),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: const Color(0xFF1B5E20).withValues(alpha: 0.4),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.green.withValues(alpha: 0.15),
-                                        blurRadius: 8,
+                                child: AnimatedScale(
+                                  scale: 1.0 + (0.12 * greenIntensity),
+                                  duration: const Duration(milliseconds: 120),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFC8E6C9).withValues(
+                                        alpha: 0.8 + (0.2 * greenIntensity),
                                       ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.check_rounded, color: Color(0xFF1B5E20), size: 20),
-                                      const SizedBox(height: 4),
-                                      RotatedBox(
-                                        quarterTurns: 3,
-                                        child: Text(
-                                          strings.keep,
-                                          style: const TextStyle(
-                                            color: Color(0xFF1B5E20),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 1.5,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: const Color(0xFF1B5E20).withValues(
+                                          alpha: 0.4 + (0.5 * greenIntensity),
+                                        ),
+                                        width: 1.5 + (0.5 * greenIntensity),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.green.withValues(
+                                            alpha: 0.15 + (0.25 * greenIntensity),
+                                          ),
+                                          blurRadius: 8 + (8 * greenIntensity),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.check_rounded, color: Color(0xFF1B5E20), size: 20),
+                                        const SizedBox(height: 4),
+                                        RotatedBox(
+                                          quarterTurns: 3,
+                                          child: Text(
+                                            strings.keep,
+                                            style: const TextStyle(
+                                              color: Color(0xFF1B5E20),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 1.5,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -325,12 +407,27 @@ class DeckScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // Rodapé com os 3 botões primários: Excluir (Vermelho), Desfazer, Manter (Verde)
+                      // Rodapé com os 3 botões primários conectados à animação do card ativo
                       QuickActionsBar(
                         canUndo: controller.canUndo,
-                        onUndo: controller.undo,
-                        onSwipeLeft: controller.swipeLeft,
-                        onSwipeRight: controller.swipeRight,
+                        onUndo: () {
+                          setState(() => _dragProgress = 0.0);
+                          controller.undo();
+                        },
+                        onSwipeLeft: () {
+                          if (_topCardKey.currentState != null) {
+                            _topCardKey.currentState!.animateSwipeLeft();
+                          } else {
+                            controller.swipeLeft();
+                          }
+                        },
+                        onSwipeRight: () {
+                          if (_topCardKey.currentState != null) {
+                            _topCardKey.currentState!.animateSwipeRight();
+                          } else {
+                            controller.swipeRight();
+                          }
+                        },
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -406,7 +503,10 @@ class DeckScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
                 ),
               ),
-              onPressed: () => controller.initialize(),
+              onPressed: () {
+                setState(() => _dragProgress = 0.0);
+                controller.initialize();
+              },
               icon: const Icon(Icons.refresh_rounded),
               label: Text(strings.restartTriageBtn),
             ),
