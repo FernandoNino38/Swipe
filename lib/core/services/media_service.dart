@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
+import '../../domain/models/gallery_album.dart';
 import '../../domain/models/triage_item.dart';
 
 /// Resultado da verificação de permissões do sistema
@@ -40,34 +41,78 @@ class MediaService {
     }
   }
 
-  /// Carrega uma página de fotos leves (metadados apenas, sem decodificar bitmaps brutos)
+  /// Lista todos os álbuns/pastas disponíveis na galeria do dispositivo
+  static Future<List<GalleryAlbum>> fetchAlbums() async {
+    try {
+      final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
+        type: RequestType.image,
+        onlyAll: false,
+      );
+
+      if (paths.isEmpty) {
+        return _getDemoAlbums();
+      }
+
+      final List<GalleryAlbum> albums = [];
+      for (final path in paths) {
+        final count = await path.assetCountAsync;
+        if (count > 0) {
+          albums.add(
+            GalleryAlbum(
+              id: path.id,
+              name: path.isAll ? 'Todas as Fotos' : path.name,
+              assetCount: count,
+              pathEntity: path,
+            ),
+          );
+        }
+      }
+
+      if (albums.isEmpty) {
+        return _getDemoAlbums();
+      }
+
+      return albums;
+    } catch (e) {
+      debugPrint('Erro ao listar álbuns reais: $e. Retornando álbuns de demonstração.');
+      return _getDemoAlbums();
+    }
+  }
+
+  /// Carrega uma página de fotos leves de um álbum específico
+  /// (metadados apenas, sem decodificar bitmaps brutos)
   static Future<List<TriageItem>> loadLocalPhotos({
+    GalleryAlbum? album,
     int page = 0,
     int size = defaultPageSize,
   }) async {
     try {
-      final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
-        type: RequestType.image,
-        onlyAll: true,
-      );
-
-      if (paths.isEmpty) {
-        return _getDemoFallbackItems();
+      AssetPathEntity? targetPath = album?.pathEntity;
+      if (targetPath == null) {
+        final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
+          type: RequestType.image,
+          onlyAll: true,
+        );
+        if (paths.isNotEmpty) {
+          targetPath = paths.first;
+        }
       }
 
-      final AssetPathEntity cameraRoll = paths.first;
-      final List<AssetEntity> entities = await cameraRoll.getAssetListPaged(
+      if (targetPath == null) {
+        return _getDemoFallbackItems(albumId: album?.id);
+      }
+
+      final List<AssetEntity> entities = await targetPath.getAssetListPaged(
         page: page,
         size: size,
       );
 
       if (entities.isEmpty) {
-        return _getDemoFallbackItems();
+        return _getDemoFallbackItems(albumId: album?.id);
       }
 
       final List<TriageItem> items = [];
       for (final entity in entities) {
-        // Obter tamanho aproximado em bytes de forma assíncrona leve
         final file = await entity.file;
         final fileLength = file != null ? await file.length() : 0;
 
@@ -87,12 +132,11 @@ class MediaService {
       return items;
     } catch (e) {
       debugPrint('Falha ao ler fotos reais: $e. Ativando itens de demonstração.');
-      return _getDemoFallbackItems();
+      return _getDemoFallbackItems(albumId: album?.id);
     }
   }
 
   /// Executa o Hard Delete (exclusão física definitiva) em lote
-  /// acionando a janela de confirmação de segurança nativa do SO.
   static Future<bool> executeBatchHardDelete(List<String> assetIds) async {
     try {
       final List<String> resultIds = await PhotoManager.editor.deleteWithIds(assetIds);
@@ -104,10 +148,36 @@ class MediaService {
     }
   }
 
+  /// Lista padrão de álbuns para testes ou ambiente de demonstração
+  static List<GalleryAlbum> _getDemoAlbums() {
+    return const [
+      GalleryAlbum(
+        id: 'all',
+        name: 'Todas as Fotos',
+        assetCount: 6,
+      ),
+      GalleryAlbum(
+        id: 'camera',
+        name: 'Câmera',
+        assetCount: 3,
+      ),
+      GalleryAlbum(
+        id: 'screenshots',
+        name: 'Capturas de Tela',
+        assetCount: 1,
+      ),
+      GalleryAlbum(
+        id: 'travel',
+        name: 'Viagens',
+        assetCount: 2,
+      ),
+    ];
+  }
+
   /// Dados de demonstração offline para testes em emuladores ou ambientes sem fotos reais
-  static List<TriageItem> _getDemoFallbackItems() {
+  static List<TriageItem> _getDemoFallbackItems({String? albumId}) {
     final now = DateTime.now();
-    return [
+    final allItems = [
       TriageItem(
         id: 'demo_1',
         title: 'IMG_20260924_104512.jpg',
@@ -163,5 +233,15 @@ class MediaService {
         mockImageUrl: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&q=80',
       ),
     ];
+
+    if (albumId == 'camera') {
+      return [allItems[0], allItems[1], allItems[3]];
+    } else if (albumId == 'screenshots') {
+      return [allItems[2]];
+    } else if (albumId == 'travel') {
+      return [allItems[4], allItems[5]];
+    }
+
+    return allItems;
   }
 }

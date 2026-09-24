@@ -3,6 +3,7 @@ import 'package:photo_manager/photo_manager.dart';
 import '../../core/cache/sliding_window_cache.dart';
 import '../../core/services/media_service.dart';
 import '../models/album_item.dart';
+import '../models/gallery_album.dart';
 import '../models/triage_item.dart';
 
 /// Controlador central da sessão de triagem, gerenciando o ciclo de vida dos cards,
@@ -13,6 +14,9 @@ class TriageController extends ChangeNotifier {
 
   List<TriageItem> _items = [];
   int _currentIndex = 0;
+
+  List<GalleryAlbum> _availableAlbums = [];
+  GalleryAlbum? _selectedAlbum;
 
   // Fila de revisão (Soft Delete) - nunca altera os arquivos físicos até a confirmação final
   final List<TriageItem> _softDeleteQueue = [];
@@ -37,6 +41,8 @@ class TriageController extends ChangeNotifier {
   MediaPermissionStatus get permissionStatus => _permissionStatus;
   ColorScheme? get contextualColorScheme => _contextualColorScheme;
   SlidingWindowCache get cache => _cache;
+  List<GalleryAlbum> get availableAlbums => List.unmodifiable(_availableAlbums);
+  GalleryAlbum? get selectedAlbum => _selectedAlbum;
 
   TriageItem? get currentItem =>
       (_currentIndex >= 0 && _currentIndex < _items.length)
@@ -83,7 +89,9 @@ class TriageController extends ChangeNotifier {
 
     try {
       _permissionStatus = await MediaService.requestPermissions();
-      _items = await MediaService.loadLocalPhotos();
+      _availableAlbums = await MediaService.fetchAlbums();
+      _selectedAlbum = _availableAlbums.isNotEmpty ? _availableAlbums.first : null;
+      _items = await MediaService.loadLocalPhotos(album: _selectedAlbum);
 
       _currentIndex = 0;
       _softDeleteQueue.clear();
@@ -95,6 +103,32 @@ class TriageController extends ChangeNotifier {
       _extractColorSchemeFromCurrentItem();
     } catch (e) {
       _errorMessage = 'Falha ao inicializar galeria: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Altera o álbum/pasta ativo para triagem
+  Future<void> selectAlbum(GalleryAlbum album) async {
+    if (_selectedAlbum == album) return;
+
+    _selectedAlbum = album;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _items = await MediaService.loadLocalPhotos(album: album);
+      _currentIndex = 0;
+      _softDeleteQueue.clear();
+      _keptItems.clear();
+      _albumAssignments.clear();
+      _undoStack.clear();
+
+      await _refreshSlidingWindow();
+      _extractColorSchemeFromCurrentItem();
+    } catch (e) {
+      _errorMessage = 'Erro ao alternar para o álbum ${album.name}: $e';
     } finally {
       _isLoading = false;
       notifyListeners();

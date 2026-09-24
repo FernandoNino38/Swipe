@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
+import '../widgets/album_selection_sheet.dart';
 import '../widgets/quick_actions_bar.dart';
 import '../widgets/triage_card.dart';
 import 'photo_detail_dialog.dart';
 import 'review_screen.dart';
 
 /// Tela principal de triagem em tela cheia com baralho de cards (Tinder style),
-/// barra de progresso linear M3, indicador dinâmico de lixeira e ações de rodapé.
+/// seletor de álbum M3 Expressive, barra de progresso linear e ações de rodapé.
 class DeckScreen extends StatelessWidget {
   const DeckScreen({super.key});
 
@@ -20,20 +21,38 @@ class DeckScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          children: [
-            const Text(
-              'Triagem de Fotos',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            if (controller.totalCards > 0)
-              Text(
-                '${(controller.currentIndex + 1).clamp(1, controller.totalCards)} de ${controller.totalCards} fotos',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => AlbumSelectionSheet.show(context, controller),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        controller.selectedAlbum?.name ?? 'Triagem de Fotos',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down_rounded, size: 24),
+                  ],
                 ),
-              ),
-          ],
+                if (controller.totalCards > 0)
+                  Text(
+                    '${(controller.currentIndex + 1).clamp(1, controller.totalCards)} de ${controller.totalCards} fotos',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
         centerTitle: true,
         bottom: PreferredSize(
@@ -220,6 +239,18 @@ class DeckScreen extends StatelessWidget {
               onPressed: () => controller.initialize(),
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Reiniciar Triagem'),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(240, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
+                ),
+              ),
+              onPressed: () => AlbumSelectionSheet.show(context, controller),
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Trocar de Álbum'),
             ),
           ],
         ),
