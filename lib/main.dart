@@ -49,7 +49,7 @@ class _PhotoTriageAppView extends StatelessWidget {
             : darkDynamic;
 
         return MaterialApp(
-          title: 'Triagem de Fotos M3',
+          title: 'Swipe',
           debugShowCheckedModeBanner: false,
           theme: M3ExpressiveTheme.buildTheme(
             dynamicColorScheme: effectiveLight,

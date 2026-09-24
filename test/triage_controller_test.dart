@@ -110,5 +110,16 @@ void main() {
       controller.toggleLocale();
       expect(controller.customLocale?.languageCode, equals('pt'));
     });
+
+    test('Batch limit can be updated and reloads items', () async {
+      expect(controller.batchLimit, equals(100));
+
+      await controller.setBatchLimit(30);
+      expect(controller.batchLimit, equals(30));
+      expect(controller.items.isNotEmpty, isTrue);
+
+      await controller.setBatchLimit(0); // 0 = all
+      expect(controller.batchLimit, equals(0));
+    });
   });
 }

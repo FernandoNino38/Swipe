@@ -36,6 +36,10 @@ class TriageController extends ChangeNotifier {
   // ColorScheme extraído dinamicamente da foto ativa (M3 Contextual Dynamic Color)
   ColorScheme? _contextualColorScheme;
 
+  // Limite configurável de fotos por sessão (0 = sem limite / todas as fotos)
+  int _batchLimit = 100;
+  static const List<int> availableBatchLimits = [30, 60, 100, 200, 500, 0];
+
   // Getters públicos
   List<TriageItem> get items => _items;
   int get currentIndex => _currentIndex;
@@ -47,6 +51,8 @@ class TriageController extends ChangeNotifier {
   List<GalleryAlbum> get availableAlbums => List.unmodifiable(_availableAlbums);
   GalleryAlbum? get selectedAlbum => _selectedAlbum;
   Locale? get customLocale => _customLocale;
+  int get batchLimit => _batchLimit;
+  TriageAction? get lastAction => _undoStack.isNotEmpty ? _undoStack.last : null;
 
   void toggleLocale() {
     if (_customLocale?.languageCode == 'en') {
@@ -60,6 +66,34 @@ class TriageController extends ChangeNotifier {
   void setLocale(Locale? locale) {
     _customLocale = locale;
     notifyListeners();
+  }
+
+  /// Altera o limite de fotos da sessão e recarrega os itens
+  Future<void> setBatchLimit(int limit) async {
+    if (_batchLimit == limit) return;
+    _batchLimit = limit;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _items = await MediaService.loadLocalPhotos(
+        album: _selectedAlbum,
+        limit: _batchLimit,
+      );
+      _currentIndex = 0;
+      _softDeleteQueue.clear();
+      _keptItems.clear();
+      _albumAssignments.clear();
+      _undoStack.clear();
+
+      await _refreshSlidingWindow();
+      _extractColorSchemeFromCurrentItem();
+    } catch (e) {
+      _errorMessage = 'Falha ao recarregar fotos com novo limite: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   TriageItem? get currentItem =>
@@ -110,7 +144,10 @@ class TriageController extends ChangeNotifier {
       _permissionStatus = await MediaService.requestPermissions();
       _availableAlbums = await MediaService.fetchAlbums();
       _selectedAlbum = _availableAlbums.isNotEmpty ? _availableAlbums.first : null;
-      _items = await MediaService.loadLocalPhotos(album: _selectedAlbum);
+      _items = await MediaService.loadLocalPhotos(
+        album: _selectedAlbum,
+        limit: _batchLimit,
+      );
 
       _currentIndex = 0;
       _softDeleteQueue.clear();
@@ -137,7 +174,10 @@ class TriageController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _items = await MediaService.loadLocalPhotos(album: album);
+      _items = await MediaService.loadLocalPhotos(
+        album: album,
+        limit: _batchLimit,
+      );
       _currentIndex = 0;
       _softDeleteQueue.clear();
       _keptItems.clear();

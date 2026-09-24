@@ -15,16 +15,22 @@ class AppStrings {
   bool get isEnglish => locale.languageCode == 'en';
 
   // App & Navegação
-  String get appTitle => isEnglish ? 'Photo Triage' : 'Triagem de Fotos';
+  String get appTitle => 'Swipe';
   String get selectAlbum => isEnglish ? 'Select Album' : 'Selecionar Álbum';
   String get selectAlbumPrompt => isEnglish
       ? 'Choose the gallery folder you want to triage:'
       : 'Escolha a pasta da galeria que deseja triar:';
+  String get batchLimit => isEnglish ? 'Review Limit' : 'Limite de Verificação';
+  String get batchLimitPrompt => isEnglish
+      ? 'How many photos do you want to verify?'
+      : 'Quantas fotos deseja verificar nesta sessão?';
+  String get allPhotosOption => isEnglish ? 'All' : 'Todas';
   String get allPhotos => isEnglish ? 'All Photos' : 'Todas as Fotos';
   String get noAlbumsFound => isEnglish ? 'No albums found on device.' : 'Nenhum álbum encontrado no dispositivo.';
   String photosCount(int current, int total) =>
       isEnglish ? '$current of $total photos' : '$current de $total fotos';
   String albumPhotos(int count) => isEnglish ? '$count photos' : '$count fotos';
+  String get undoRestored => isEnglish ? 'Photo restored to deck!' : 'Foto restaurada ao baralho!';
 
   // Decisões dos Cards
   String get keep => isEnglish ? 'KEEP' : 'MANTER';

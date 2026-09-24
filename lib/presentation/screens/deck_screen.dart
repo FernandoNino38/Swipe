@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
+import '../../domain/models/triage_item.dart';
 import '../widgets/album_selection_sheet.dart';
 import '../widgets/quick_actions_bar.dart';
 import '../widgets/triage_card.dart';
@@ -10,8 +11,8 @@ import 'photo_detail_dialog.dart';
 import 'review_screen.dart';
 
 /// Tela principal de triagem em tela cheia com baralho de cards dinâmico (M3 Expressive),
-/// transição física contínua entre cards, indicadores laterais responsivos vermelho/verde,
-/// atalho de favoritos no topo e ações de rodapé com animação fluida.
+/// transição física contínua entre cards, animação expressiva de Desfazer (Undo),
+/// seletores de álbum e limite de fotos, e indicadores laterais responsivos.
 class DeckScreen extends StatefulWidget {
   const DeckScreen({super.key});
 
@@ -22,6 +23,7 @@ class DeckScreen extends StatefulWidget {
 class _DeckScreenState extends State<DeckScreen> {
   final GlobalKey<TriageCardState> _topCardKey = GlobalKey<TriageCardState>();
   double _dragProgress = 0.0;
+  Offset? _undoEntranceOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -65,14 +67,28 @@ class _DeckScreenState extends State<DeckScreen> {
                   ],
                 ),
                 if (controller.totalCards > 0)
-                  Text(
-                    strings.photosCount(
-                      (controller.currentIndex + 1).clamp(1, controller.totalCards),
-                      controller.totalCards,
-                    ),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        strings.photosCount(
+                          (controller.currentIndex + 1).clamp(1, controller.totalCards),
+                          controller.totalCards,
+                        ),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (controller.batchLimit > 0) ...[
+                        Text(
+                          ' • ${controller.batchLimit} máx',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
               ],
             ),
@@ -110,41 +126,64 @@ class _DeckScreenState extends State<DeckScreen> {
             onPressed: () => controller.toggleLocale(),
           ),
 
-          // Botão de Favoritos no topo (ao lado da lixeira)
+          // Botão de Favoritos no topo (ao lado da lixeira) com animação de contagem
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Badge(
-              isLabelVisible: controller.favoritesCount > 0,
-              label: Text(
-                '${controller.favoritesCount}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              backgroundColor: Colors.pinkAccent,
-              child: IconButton.filledTonal(
-                tooltip: strings.favoriteTooltip,
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFFCE4EC),
-                  foregroundColor: const Color(0xFFC2185B),
+            child: AnimatedScale(
+              scale: controller.favoritesCount > 0 ? 1.0 : 0.95,
+              duration: const Duration(milliseconds: 200),
+              child: Badge(
+                isLabelVisible: controller.favoritesCount > 0,
+                label: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                  child: Text(
+                    '${controller.favoritesCount}',
+                    key: ValueKey(controller.favoritesCount),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-                icon: const Icon(Icons.favorite_rounded),
-                onPressed: controller.currentItem != null
-                    ? () {
-                        if (_topCardKey.currentState != null) {
-                          _topCardKey.currentState!.animateFavorite(() {
-                            setState(() => _dragProgress = 0.0);
+                backgroundColor: Colors.pinkAccent,
+                child: IconButton.filledTonal(
+                  tooltip: strings.favoriteTooltip,
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFFCE4EC),
+                    foregroundColor: const Color(0xFFC2185B),
+                  ),
+                  icon: const Icon(Icons.favorite_rounded),
+                  onPressed: controller.currentItem != null
+                      ? () {
+                          if (_topCardKey.currentState != null) {
+                            _topCardKey.currentState!.animateFavorite(() {
+                              setState(() {
+                                _dragProgress = 0.0;
+                                _undoEntranceOffset = null;
+                              });
+                              controller.favoriteCurrentPhoto();
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  duration: const Duration(milliseconds: 900),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.favorite_rounded, color: Colors.pinkAccent, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(strings.addedToFavorites),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            });
+                          } else {
                             controller.favoriteCurrentPhoto();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                duration: const Duration(seconds: 1),
-                                content: Text(strings.addedToFavorites),
-                              ),
-                            );
-                          });
-                        } else {
-                          controller.favoriteCurrentPhoto();
+                          }
                         }
-                      }
-                    : null,
+                      : null,
+                ),
               ),
             ),
           ),
@@ -152,23 +191,32 @@ class _DeckScreenState extends State<DeckScreen> {
           // Botão com Badge para a Grade de Revisão da Lixeira
           Padding(
             padding: const EdgeInsets.only(right: 12, left: 4),
-            child: Badge(
-              isLabelVisible: controller.softDeleteCount > 0,
-              label: Text(
-                '${controller.softDeleteCount}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              backgroundColor: colorScheme.error,
-              child: IconButton.filledTonal(
-                tooltip: '${strings.reviewTrash} (${controller.formattedReclaimableStorage})',
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ReviewScreen(),
-                    ),
-                  );
-                },
+            child: AnimatedScale(
+              scale: controller.softDeleteCount > 0 ? 1.0 : 0.95,
+              duration: const Duration(milliseconds: 200),
+              child: Badge(
+                isLabelVisible: controller.softDeleteCount > 0,
+                label: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                  child: Text(
+                    '${controller.softDeleteCount}',
+                    key: ValueKey(controller.softDeleteCount),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                backgroundColor: colorScheme.error,
+                child: IconButton.filledTonal(
+                  tooltip: '${strings.reviewTrash} (${controller.formattedReclaimableStorage})',
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ReviewScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -207,15 +255,16 @@ class _DeckScreenState extends State<DeckScreen> {
                                 ),
                               ),
 
-                            // Card N (Card ativo no topo com controle de gestos e animação)
+                            // Card N (Card ativo no topo com animação de entrada ao Desfazer)
                             if (controller.currentItem != null)
                               TriageCard(
-                                key: _topCardKey,
+                                key: ValueKey('card_${controller.currentItem!.id}_${controller.currentIndex}'),
                                 item: controller.currentItem!,
                                 cachedBytes: controller.cache.getCachedBytes(
                                   controller.currentItem!.id,
                                 ),
                                 isTopCard: true,
+                                enterFromOffset: _undoEntranceOffset,
                                 onDragProgress: (progress) {
                                   if (mounted) {
                                     setState(() {
@@ -224,11 +273,17 @@ class _DeckScreenState extends State<DeckScreen> {
                                   }
                                 },
                                 onSwipeRight: () {
-                                  setState(() => _dragProgress = 0.0);
+                                  setState(() {
+                                    _dragProgress = 0.0;
+                                    _undoEntranceOffset = null;
+                                  });
                                   controller.swipeRight();
                                 },
                                 onSwipeLeft: () {
-                                  setState(() => _dragProgress = 0.0);
+                                  setState(() {
+                                    _dragProgress = 0.0;
+                                    _undoEntranceOffset = null;
+                                  });
                                   controller.swipeLeft();
                                 },
                                 onTapDetail: () {
@@ -407,12 +462,51 @@ class _DeckScreenState extends State<DeckScreen> {
                         ),
                       ),
 
-                      // Rodapé com os 3 botões primários conectados à animação do card ativo
+                      // Rodapé com os 3 botões primários conectados à animação do card ativo e Desfazer
                       QuickActionsBar(
                         canUndo: controller.canUndo,
                         onUndo: () {
-                          setState(() => _dragProgress = 0.0);
+                          final last = controller.lastAction;
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          Offset? undoOffset;
+                          if (last != null) {
+                            switch (last.type) {
+                              case TriageActionType.softDelete:
+                                undoOffset = Offset(-screenWidth - 100, 0);
+                                break;
+                              case TriageActionType.keep:
+                                undoOffset = Offset(screenWidth + 100, 0);
+                                break;
+                              case TriageActionType.moveToAlbum:
+                                undoOffset = const Offset(0, -600);
+                                break;
+                            }
+                          }
+
+                          setState(() {
+                            _undoEntranceOffset = undoOffset;
+                            _dragProgress = 0.0;
+                          });
+
                           controller.undo();
+
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              duration: const Duration(milliseconds: 900),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.undo_rounded, color: Colors.white, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(strings.undoRestored),
+                                ],
+                              ),
+                            ),
+                          );
                         },
                         onSwipeLeft: () {
                           if (_topCardKey.currentState != null) {
@@ -504,7 +598,10 @@ class _DeckScreenState extends State<DeckScreen> {
                 ),
               ),
               onPressed: () {
-                setState(() => _dragProgress = 0.0);
+                setState(() {
+                  _dragProgress = 0.0;
+                  _undoEntranceOffset = null;
+                });
                 controller.initialize();
               },
               icon: const Icon(Icons.refresh_rounded),

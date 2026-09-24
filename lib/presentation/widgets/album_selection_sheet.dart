@@ -52,11 +52,35 @@ class AlbumSelectionSheet extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 12),
                   Text(
-                    strings.selectAlbumPrompt,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    strings.batchLimit,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: TriageController.availableBatchLimits.map((limit) {
+                        final isSelected = controller.batchLimit == limit;
+                        final label = limit == 0 ? strings.allPhotosOption : '$limit';
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            selected: isSelected,
+                            label: Text(label),
+                            avatar: isSelected
+                                ? const Icon(Icons.check_rounded, size: 16)
+                                : null,
+                            onSelected: (_) {
+                              controller.setBatchLimit(limit);
+                            },
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],

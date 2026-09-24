@@ -80,11 +80,12 @@ class MediaService {
   }
 
   /// Carrega uma página de fotos leves de um álbum específico
-  /// (metadados apenas, sem decodificar bitmaps brutos)
+  /// (metadados apenas, sem decodificar bitmaps brutos).
+  /// [limit] define a quantidade máxima de fotos a verificar (0 = sem limite / todas as fotos).
   static Future<List<TriageItem>> loadLocalPhotos({
     GalleryAlbum? album,
     int page = 0,
-    int size = defaultPageSize,
+    int limit = 100,
   }) async {
     try {
       AssetPathEntity? targetPath = album?.pathEntity;
@@ -99,12 +100,15 @@ class MediaService {
       }
 
       if (targetPath == null) {
-        return _getDemoFallbackItems(albumId: album?.id);
+        return _getDemoFallbackItems(albumId: album?.id, limit: limit);
       }
 
-      final List<AssetEntity> entities = await targetPath.getAssetListPaged(
-        page: page,
-        size: size,
+      final int totalAssets = await targetPath.assetCountAsync;
+      final int countToFetch = (limit <= 0 || limit > totalAssets) ? totalAssets : limit;
+
+      final List<AssetEntity> entities = await targetPath.getAssetListRange(
+        start: 0,
+        end: countToFetch,
       );
 
       if (entities.isEmpty) {
@@ -175,7 +179,7 @@ class MediaService {
   }
 
   /// Dados de demonstração offline para testes em emuladores ou ambientes sem fotos reais
-  static List<TriageItem> _getDemoFallbackItems({String? albumId}) {
+  static List<TriageItem> _getDemoFallbackItems({String? albumId, int limit = 0}) {
     final now = DateTime.now();
     final allItems = [
       TriageItem(
@@ -234,14 +238,20 @@ class MediaService {
       ),
     ];
 
+    List<TriageItem> result;
     if (albumId == 'camera') {
-      return [allItems[0], allItems[1], allItems[3]];
+      result = [allItems[0], allItems[1], allItems[3]];
     } else if (albumId == 'screenshots') {
-      return [allItems[2]];
+      result = [allItems[2]];
     } else if (albumId == 'travel') {
-      return [allItems[4], allItems[5]];
+      result = [allItems[4], allItems[5]];
+    } else {
+      result = allItems;
     }
 
-    return allItems;
+    if (limit > 0 && limit < result.length) {
+      return result.sublist(0, limit);
+    }
+    return result;
   }
 }

@@ -19,6 +19,7 @@ class TriageCard extends StatefulWidget {
   final VoidCallback onSwipeLeft;
   final VoidCallback onTapDetail;
   final DragProgressCallback? onDragProgress;
+  final Offset? enterFromOffset;
 
   const TriageCard({
     super.key,
@@ -29,6 +30,7 @@ class TriageCard extends StatefulWidget {
     required this.onSwipeLeft,
     required this.onTapDetail,
     this.onDragProgress,
+    this.enterFromOffset,
   });
 
   @override
@@ -55,12 +57,50 @@ class TriageCardState extends State<TriageCard>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 280),
+      duration: const Duration(milliseconds: 320),
     );
 
-    _offsetAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(_animController);
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(_animController);
-    _opacityAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(_animController);
+    if (widget.enterFromOffset != null) {
+      _dragOffset = widget.enterFromOffset!;
+      _dragAngle = (widget.enterFromOffset!.dx.sign * -0.22);
+      _cardOpacity = 0.5;
+
+      _offsetAnimation = Tween<Offset>(
+        begin: widget.enterFromOffset!,
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _animController,
+          curve: Curves.easeOutBack,
+        ),
+      );
+
+      _rotationAnimation = Tween<double>(
+        begin: _dragAngle,
+        end: 0.0,
+      ).animate(
+        CurvedAnimation(
+          parent: _animController,
+          curve: Curves.easeOutCubic,
+        ),
+      );
+
+      _opacityAnimation = Tween<double>(
+        begin: 0.5,
+        end: 1.0,
+      ).animate(
+        CurvedAnimation(
+          parent: _animController,
+          curve: Curves.easeInQuad,
+        ),
+      );
+
+      _animController.forward(from: 0.0);
+    } else {
+      _offsetAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero).animate(_animController);
+      _rotationAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(_animController);
+      _opacityAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(_animController);
+    }
 
     _animController.addListener(() {
       setState(() {
@@ -79,9 +119,48 @@ class TriageCardState extends State<TriageCard>
     if (widget.item.id != oldWidget.item.id) {
       _animController.stop();
       _isExiting = false;
-      _dragOffset = Offset.zero;
-      _dragAngle = 0.0;
-      _cardOpacity = 1.0;
+      if (widget.enterFromOffset != null) {
+        _dragOffset = widget.enterFromOffset!;
+        _dragAngle = (widget.enterFromOffset!.dx.sign * -0.22);
+        _cardOpacity = 0.5;
+
+        _offsetAnimation = Tween<Offset>(
+          begin: widget.enterFromOffset!,
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Curves.easeOutBack,
+          ),
+        );
+
+        _rotationAnimation = Tween<double>(
+          begin: _dragAngle,
+          end: 0.0,
+        ).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+        _opacityAnimation = Tween<double>(
+          begin: 0.5,
+          end: 1.0,
+        ).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Curves.easeInQuad,
+          ),
+        );
+
+        _animController.duration = const Duration(milliseconds: 340);
+        _animController.forward(from: 0.0);
+      } else {
+        _dragOffset = Offset.zero;
+        _dragAngle = 0.0;
+        _cardOpacity = 1.0;
+      }
     }
   }
 
