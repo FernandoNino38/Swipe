@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Define o tema visual inspirado na Samsung One UI 9 (Galaxy Aesthetic)
-/// com arquitetura de ergonomia de uso com uma mão (Viewing area vs Interaction area),
-/// geometria orgânica squircle (raios pronunciados de 30dp a 34dp), cores One UI vibrantes
-/// (Samsung Blue, Emerald Mint, Coral Red, Rose Pink) e superfícies AMOLED translúcidas.
+/// Define o tema visual do aplicativo Swipe com base nas diretrizes Material 3 Expressive,
+/// geometria orgânica squircle, cores de alta legibilidade
+/// (Blue, Emerald Mint, Coral Red, Rose Pink) e superfícies AMOLED translúcidas.
 class M3ExpressiveTheme {
-  // Paleta de Cores Signature da Samsung One UI 9
-  static const Color oneUiBlue = Color(0xFF0072DE); // Samsung Electric Blue
-  static const Color oneUiMint = Color(0xFF2AC06D); // Samsung Emerald Mint (Manter)
-  static const Color oneUiCoral = Color(0xFFFA5252); // Samsung Coral Red (Excluir)
-  static const Color oneUiRose = Color(0xFFFF3366); // Samsung Rose Pink (Favorito)
-  static const Color oneUiAmber = Color(0xFFFF922B); // Samsung Amber
-  static const Color oneUiPurple = Color(0xFF7952B3); // Samsung Warm Violet
+  // Paleta de Cores Signature do Swipe
+  static const Color oneUiBlue = Color(0xFF0072DE); // Electric Blue
+  static const Color oneUiMint = Color(0xFF2AC06D); // Emerald Mint (Manter)
+  static const Color oneUiCoral = Color(0xFFFA5252); // Coral Red (Excluir)
+  static const Color oneUiRose = Color(0xFFFF3366); // Rose Pink (Favorito)
+  static const Color oneUiAmber = Color(0xFFFF922B); // Amber
+  static const Color oneUiPurple = Color(0xFF7952B3); // Warm Violet
 
   // Fallbacks e compatibilidade de constantes existentes
   static const Color defaultSeedColor = oneUiBlue;
@@ -19,20 +18,20 @@ class M3ExpressiveTheme {
   static const Color negativeActionColor = oneUiCoral;
   static const Color accentWarningColor = oneUiAmber;
 
-  // Raios One UI 9 Squircle & Superellipse
+  // Raios Squircle & Superellipse
   static const double cardBorderRadius = 34.0;
   static const double capsuleRadius = 30.0;
   static const double pillBorderRadius = 24.0;
   static const double chipBorderRadius = 18.0;
   static const double sheetBorderRadius = 32.0;
 
-  // Superfícies One UI 9
-  static const Color lightScaffold = Color(0xFFF3F4F8); // Clean Light One UI Canvas
+  // Superfícies do Swipe
+  static const Color lightScaffold = Color(0xFFF3F4F8); // Clean Light Canvas
   static const Color lightCardSurface = Color(0xFFFFFFFF);
   static const Color darkScaffold = Color(0xFF0A0C10); // Deep AMOLED Black Canvas
   static const Color darkCardSurface = Color(0xFF161922); // Deep Charcoal Card
 
-  /// Constrói o ThemeData com estilo One UI 9
+  /// Constrói o ThemeData Expressive
   static ThemeData buildTheme({
     ColorScheme? dynamicColorScheme,
     Brightness brightness = Brightness.light,
@@ -80,10 +79,10 @@ class M3ExpressiveTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: isDark ? darkScaffold : lightScaffold,
 
-      // Tipografia One UI 9 com legibilidade em grandes cabeçalhos
+      // Tipografia expressiva com legibilidade em grandes cabeçalhos
       textTheme: _buildOneUiTextTheme(colorScheme),
 
-      // AppBar com One UI Viewing Area (limpo, transparente com título expressivo)
+      // AppBar limpa e transparente com título expressivo
       appBarTheme: AppBarTheme(
         backgroundColor: isDark ? darkScaffold : lightScaffold,
         foregroundColor: colorScheme.onSurface,
@@ -98,7 +97,7 @@ class M3ExpressiveTheme {
         ),
       ),
 
-      // Cartões One UI 9 Squircle
+      // Cartões Squircle
       cardTheme: CardThemeData(
         elevation: 0,
         color: isDark ? darkCardSurface : lightCardSurface,
@@ -112,7 +111,7 @@ class M3ExpressiveTheme {
         clipBehavior: Clip.antiAliasWithSaveLayer,
       ),
 
-      // Botões One UI 9 (Pill arredondados e confortáveis)
+      // Botões arredondados confortáveis
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
@@ -153,7 +152,7 @@ class M3ExpressiveTheme {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
 
-      // Diálogos e Bottom Sheets One UI 9
+      // Diálogos e Bottom Sheets
       dialogTheme: DialogThemeData(
         backgroundColor: isDark ? const Color(0xFF1B1E28) : Colors.white,
         shape: RoundedRectangleBorder(

@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Pílula translúcida com estilo One UI 9 para sobreposição de metadados na foto
+/// Pílula translúcida fosca para sobreposição de metadados na foto
 class MetadataPill extends StatelessWidget {
   final IconData icon;
   final String label;

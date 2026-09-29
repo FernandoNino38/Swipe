@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
@@ -246,6 +247,70 @@ class SettingsScreen extends StatelessWidget {
 
                 const Divider(height: 1),
 
+                // Modo de Exibição das Fotos (Smart Fit vs Fill)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.aspect_ratio_rounded, size: 22, color: colorScheme.primary),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  strings.imageDisplayMode,
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  strings.imageDisplayModeDesc,
+                                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildRadioTile<bool>(
+                        context,
+                        title: strings.fitMode,
+                        subtitle: strings.fitModeDesc,
+                        icon: Icons.fit_screen_rounded,
+                        value: true,
+                        groupValue: controller.isFitMode,
+                        onChanged: (val) {
+                          if (val != null) {
+                            HapticFeedback.selectionClick();
+                            controller.setFitMode(val);
+                          }
+                        },
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      _buildRadioTile<bool>(
+                        context,
+                        title: strings.fillMode,
+                        subtitle: strings.fillModeDesc,
+                        icon: Icons.crop_free_rounded,
+                        value: false,
+                        groupValue: controller.isFitMode,
+                        onChanged: (val) {
+                          if (val != null) {
+                            HapticFeedback.selectionClick();
+                            controller.setFitMode(val);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Divider(height: 1),
+
                 // Memória de Fotos Mantidas
                 SwitchListTile.adaptive(
                   secondary: Icon(Icons.history_rounded, color: colorScheme.primary),
@@ -325,7 +390,7 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // SEÇÃO 4: SOBRE & CRÉDITOS DE IA
+          // SEÇÃO 4: SOBRE & CRÉDITOS
           _buildSectionHeader(context, strings.aboutApp, Icons.info_outline_rounded),
           const SizedBox(height: 8),
           _buildCard(
@@ -334,22 +399,23 @@ class SettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               child: Column(
                 children: [
+                  // App header: icon + name + version
                   Row(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.asset(
                           'assets/icon/app_icon.png',
-                          width: 52,
-                          height: 52,
+                          width: 60,
+                          height: 60,
                           errorBuilder: (context, error, stackTrace) => Container(
-                            width: 52,
-                            height: 52,
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
                               color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.photo_library_rounded, color: Colors.white),
+                            child: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 28),
                           ),
                         ),
                       ),
@@ -362,13 +428,13 @@ class SettingsScreen extends StatelessWidget {
                               'Swipe',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: 20,
+                                fontSize: 22,
                                 letterSpacing: -0.3,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${strings.appVersion} 0.11.2',
+                              '${strings.appVersion} 0.12.0',
                               style: TextStyle(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w600,
@@ -380,7 +446,19 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+
+                  // App description
+                  Text(
+                    strings.appDescription,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // AI credits card
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -421,18 +499,78 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+
+                  // Info rows: Developer, License, Tech
+                  _buildAboutInfoRow(
+                    context,
+                    icon: Icons.person_outline_rounded,
+                    label: strings.developer,
+                    value: strings.developerName,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildAboutInfoRow(
+                    context,
+                    icon: Icons.gavel_rounded,
+                    label: strings.license,
+                    value: strings.mitLicense,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildAboutInfoRow(
+                    context,
+                    icon: Icons.flutter_dash_rounded,
+                    label: strings.madeWith,
+                    value: '',
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Action buttons
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.code_rounded, size: 16, color: colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 6),
-                      Text(
-                        'github.com/FernandoNino38/Swipe',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _launchUrl('https://github.com/FernandoNino38/Swipe'),
+                          icon: const Icon(Icons.code_rounded, size: 18),
+                          label: Text(strings.viewOnGitHub, style: const TextStyle(fontSize: 13)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            side: BorderSide(color: colorScheme.outlineVariant),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            showLicensePage(
+                              context: context,
+                              applicationName: 'Swipe',
+                              applicationVersion: '0.12.0',
+                              applicationIcon: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.asset(
+                                    'assets/icon/app_icon.png',
+                                    width: 64,
+                                    height: 64,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.description_outlined, size: 18),
+                          label: Text(strings.openSourceLicenses, style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            side: BorderSide(color: colorScheme.outlineVariant),
+                          ),
                         ),
                       ),
                     ],
@@ -552,5 +690,47 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAboutInfoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        if (value.isNotEmpty) ...[
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }

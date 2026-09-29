@@ -58,6 +58,8 @@ class TriageHistoryService {
     } catch (_) {}
   }
 
+  static const String _imageFitModeKey = 'swipe_image_fit_mode';
+
   /// Preferência se deve ocultar fotos já mantidas (padrão true)
   static Future<bool> shouldHideKeptPhotos() async {
     try {
@@ -73,6 +75,24 @@ class TriageHistoryService {
     try {
       final prefs = await _getPrefs();
       await prefs.setBool(_hideKeptPhotosKey, value);
+    } catch (_) {}
+  }
+
+  /// Recupera o modo de exibição de imagens: true = Smart Fit (Completa), false = Fill (Preencher)
+  static Future<bool> getFitMode() async {
+    try {
+      final prefs = await _getPrefs();
+      return prefs.getBool(_imageFitModeKey) ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Salva a preferência de exibição de imagens
+  static Future<void> setFitMode(bool isFit) async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setBool(_imageFitModeKey, isFit);
     } catch (_) {}
   }
 }

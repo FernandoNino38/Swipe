@@ -9,8 +9,8 @@ import '../../domain/controllers/triage_controller.dart';
 import '../../domain/models/triage_item.dart';
 import 'photo_detail_dialog.dart';
 
-/// Tela dedicada para exibição e gerenciamento de Fotos Favoritas (Samsung One UI 9).
-/// Permite visualizar a grade de fotos favoritadas em cartões squircle,
+/// Tela dedicada para exibição e gerenciamento de Fotos Favoritas.
+/// Permite visualizar a grade de fotos favoritadas,
 /// inspecionar metadados em tela cheia e remover fotos dos favoritos.
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -33,7 +33,7 @@ class FavoritesScreen extends StatelessWidget {
           ? _buildEmptyState(context, colorScheme, strings, isDark)
           : Column(
               children: [
-                // Banner Resumo de Favoritos One UI 9
+                // Banner Resumo de Favoritos
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   padding: const EdgeInsets.all(16),
@@ -102,7 +102,7 @@ class FavoritesScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Grade de fotos favoritas One UI 9
+                // Grade de fotos favoritas
                 Expanded(
                   child: GridView.builder(
                     physics: const BouncingScrollPhysics(),
@@ -213,12 +213,14 @@ class FavoritesScreen extends StatelessWidget {
               ),
             ),
 
-            // Tamanho do arquivo na base
+            // Tamanho do arquivo na base e proporção
             Positioned(
               left: 8,
               bottom: 6,
               child: Text(
-                item.formattedSize,
+                item.ratioLabel.isNotEmpty
+                    ? '${item.formattedSize} • ${item.ratioLabel}'
+                    : item.formattedSize,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,

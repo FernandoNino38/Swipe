@@ -61,6 +61,38 @@ class TriageItem {
     return '$width × $height (${mp.toStringAsFixed(1)} MP)';
   }
 
+  /// Proporção geométrica da imagem (largura / altura)
+  double get aspectRatio {
+    if (width <= 0 || height <= 0) return 1.0;
+    return width / height;
+  }
+
+  /// Indica se a imagem é horizontal (Landscape)
+  bool get isLandscape => width > height;
+
+  /// Indica se a imagem é vertical (Portrait)
+  bool get isPortrait => height > width;
+
+  /// Indica se a imagem é quadrada (~1:1)
+  bool get isSquare =>
+      width > 0 && height > 0 && (width - height).abs() / width < 0.05;
+
+  /// Rótulo formatado da proporção da imagem (ex: "4:3", "16:9", "1:1", "Panorama")
+  String get ratioLabel {
+    if (width <= 0 || height <= 0) return '';
+    final ratio = width / height;
+    if (ratio > 2.2) return 'Panorama';
+    if ((ratio - 16 / 9).abs() < 0.08) return '16:9';
+    if ((ratio - 4 / 3).abs() < 0.08) return '4:3';
+    if ((ratio - 3 / 2).abs() < 0.08) return '3:2';
+    if ((ratio - 1.0).abs() < 0.06) return '1:1';
+    if ((ratio - 9 / 16).abs() < 0.08) return '9:16';
+    if ((ratio - 3 / 4).abs() < 0.08) return '3:4';
+    if ((ratio - 2 / 3).abs() < 0.08) return '2:3';
+    if (ratio < 0.45) return 'Vertical';
+    return isLandscape ? '$width:$height' : '$width:$height';
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

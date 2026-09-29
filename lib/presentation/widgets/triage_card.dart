@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -13,6 +14,8 @@ class TriageCard extends StatefulWidget {
   final TriageItem item;
   final Uint8List? cachedBytes;
   final bool isTopCard;
+  final bool isFitMode;
+  final VoidCallback? onToggleFitMode;
   final VoidCallback onSwipeRight;
   final VoidCallback onSwipeLeft;
   final VoidCallback onTapDetail;
@@ -24,6 +27,8 @@ class TriageCard extends StatefulWidget {
     required this.item,
     this.cachedBytes,
     required this.isTopCard,
+    this.isFitMode = true,
+    this.onToggleFitMode,
     required this.onSwipeRight,
     required this.onSwipeLeft,
     required this.onTapDetail,
@@ -374,6 +379,12 @@ class TriageCardState extends State<TriageCard>
       onPanUpdate: widget.isTopCard ? _onPanUpdate : null,
       onPanEnd: widget.isTopCard ? _onPanEnd : null,
       onTap: widget.onTapDetail,
+      onDoubleTap: (widget.isTopCard && widget.onToggleFitMode != null)
+          ? () {
+              HapticFeedback.lightImpact();
+              widget.onToggleFitMode!();
+            }
+          : null,
       child: Opacity(
         opacity: _cardOpacity.clamp(0.0, 1.0),
         child: Transform.translate(
@@ -407,8 +418,70 @@ class TriageCardState extends State<TriageCard>
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Imagem da Foto
+                        // Imagem da Foto (Smart Fit com ambient blur ou Fill)
                         _buildImageContent(),
+
+                        // Botão superior de alternar proporção (Ajustar / Preencher) com indicador de proporção
+                        if (widget.isTopCard && widget.onToggleFitMode != null)
+                          Positioned(
+                            top: 14,
+                            right: 14,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  widget.onToggleFitMode!();
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.55),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.24),
+                                      width: 1.0,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.25),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        widget.isFitMode
+                                            ? Icons.fit_screen_rounded
+                                            : Icons.crop_free_rounded,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                      if (widget.item.ratioLabel.isNotEmpty) ...[
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          widget.item.ratioLabel,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
 
                         // Degradê sutil na base para leitura dos metadados
                         Positioned(
@@ -476,7 +549,9 @@ class TriageCardState extends State<TriageCard>
                                   ),
                                   MetadataPill(
                                     icon: Icons.aspect_ratio_rounded,
-                                    label: widget.item.formattedResolution,
+                                    label: widget.item.ratioLabel.isNotEmpty
+                                        ? '${widget.item.formattedResolution} (${widget.item.ratioLabel})'
+                                        : widget.item.formattedResolution,
                                   ),
                                 ],
                               ),
@@ -496,12 +571,48 @@ class TriageCardState extends State<TriageCard>
   }
 
   Widget _buildImageContent() {
+    if (!widget.isFitMode) {
+      // Modo Preencher (Fill/Cover): imagem expande até cobrir o card por completo
+      return _buildRawImage(fit: BoxFit.cover);
+    }
+
+    // Modo Ajustar (Smart Fit): imagem com proporção 100% visível sem cortes (BoxFit.contain),
+    // emoldurada por uma aura ambiente desfocada (Ambient Blur Backdrop) com base nas cores da própria foto.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // 1. Fundo ambiente com desfoque gaussiano suave
+        ClipRect(
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            child: Transform.scale(
+              scale: 1.18, // Ligeira ampliação para evitar bordas transparentes do filtro
+              child: _buildRawImage(fit: BoxFit.cover),
+            ),
+          ),
+        ),
+
+        // 2. Película escura sutil sobre o fundo para profundidade e contraste
+        Container(
+          color: Colors.black.withValues(alpha: 0.38),
+        ),
+
+        // 3. Foto principal em alta definição centralizada com proporção 100% preservada
+        Center(
+          child: _buildRawImage(fit: BoxFit.contain),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRawImage({required BoxFit fit}) {
     if (widget.cachedBytes != null) {
       return Image.memory(
         widget.cachedBytes!,
-        fit: BoxFit.cover,
+        fit: fit,
         width: double.infinity,
         height: double.infinity,
+        gaplessPlayback: true,
       );
     }
 
@@ -509,8 +620,8 @@ class TriageCardState extends State<TriageCard>
       return AssetEntityImage(
         widget.item.assetEntity!,
         isOriginal: false,
-        thumbnailSize: const ThumbnailSize(1080, 1920),
-        fit: BoxFit.cover,
+        thumbnailSize: const ThumbnailSize(1440, 1920),
+        fit: fit,
         width: double.infinity,
         height: double.infinity,
         loadingBuilder: (context, child, progress) {
@@ -531,7 +642,7 @@ class TriageCardState extends State<TriageCard>
     if (widget.item.mockImageUrl != null) {
       return Image.network(
         widget.item.mockImageUrl!,
-        fit: BoxFit.cover,
+        fit: fit,
         width: double.infinity,
         height: double.infinity,
         loadingBuilder: (context, child, progress) {

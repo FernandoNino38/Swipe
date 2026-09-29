@@ -52,6 +52,9 @@ class TriageController extends ChangeNotifier {
   Set<String> _persistentKeptIds = {};
   bool _hideKeptPhotos = true;
 
+  // Modo de exibição das fotos: true = Smart Fit (Completa com fundo desfocado), false = Fill (Preencher)
+  bool _isFitMode = true;
+
   // Getters públicos
   List<TriageItem> get items => _items;
   int get currentIndex => _currentIndex;
@@ -67,6 +70,7 @@ class TriageController extends ChangeNotifier {
   PhotoSortOrder get sortOrder => _sortOrder;
   ThemeMode get themeMode => _themeMode;
   bool get hideKeptPhotos => _hideKeptPhotos;
+  bool get isFitMode => _isFitMode;
   int get persistentKeptCount => _persistentKeptIds.length;
   bool get isCurrentAlbumExhausted => !_isLoading && _items.isEmpty;
   TriageAction? get lastAction => _undoStack.isNotEmpty ? _undoStack.last : null;
@@ -106,6 +110,21 @@ class TriageController extends ChangeNotifier {
 
   void setThemeMode(ThemeMode mode) {
     _themeMode = mode;
+    notifyListeners();
+  }
+
+  /// Alterna entre modo Smart Fit (Completo) e Fill (Preencher)
+  void toggleFitMode() {
+    _isFitMode = !_isFitMode;
+    TriageHistoryService.setFitMode(_isFitMode);
+    notifyListeners();
+  }
+
+  /// Define o modo de exibição das fotos
+  void setFitMode(bool isFit) {
+    if (_isFitMode == isFit) return;
+    _isFitMode = isFit;
+    TriageHistoryService.setFitMode(_isFitMode);
     notifyListeners();
   }
 
@@ -238,6 +257,7 @@ class TriageController extends ChangeNotifier {
     try {
       _hideKeptPhotos = await TriageHistoryService.shouldHideKeptPhotos();
       _persistentKeptIds = await TriageHistoryService.getKeptPhotoIds();
+      _isFitMode = await TriageHistoryService.getFitMode();
       _permissionStatus = await MediaService.requestPermissions();
       _availableAlbums = await MediaService.fetchAlbums();
       _selectedAlbum = _availableAlbums.isNotEmpty ? _availableAlbums.first : null;
@@ -439,11 +459,11 @@ class TriageController extends ChangeNotifier {
   }
 
   Future<void> _refreshSlidingWindow() async {
-    // Alvo de resolução otimizado para o viewport do aparelho (~1080x1920)
+    // Alvo de resolução otimizado para o viewport do aparelho (~1440x1920)
     await _cache.updateWindow(
       items: _items,
       currentIndex: _currentIndex,
-      targetSize: const ThumbnailSize(1080, 1920),
+      targetSize: const ThumbnailSize(1440, 1920),
     );
   }
 

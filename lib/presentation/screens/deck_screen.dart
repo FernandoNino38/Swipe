@@ -169,6 +169,7 @@ class _DeckScreenState extends State<DeckScreen> {
                                         controller.nextItem!.id,
                                       ),
                                       isTopCard: false,
+                                      isFitMode: controller.isFitMode,
                                       onSwipeRight: () {},
                                       onSwipeLeft: () {},
                                       onTapDetail: () {},
@@ -186,6 +187,8 @@ class _DeckScreenState extends State<DeckScreen> {
                                   controller.currentItem!.id,
                                 ),
                                 isTopCard: true,
+                                isFitMode: controller.isFitMode,
+                                onToggleFitMode: controller.toggleFitMode,
                                 enterFromOffset: _undoEntranceOffset,
                                 onDragProgress: (progress) {
                                   if (mounted) {

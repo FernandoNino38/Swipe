@@ -5,7 +5,7 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../core/localization/app_strings.dart';
 import '../../domain/models/triage_item.dart';
 
-/// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom - One UI 9)
+/// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom)
 class PhotoDetailDialog extends StatelessWidget {
   final TriageItem item;
   final Uint8List? cachedBytes;
@@ -55,19 +55,35 @@ class PhotoDetailDialog extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Visualizador com suporte nativo a pinch-to-zoom
+          // Fundo ambiente desfocado sutil baseado na imagem para enriquecer proporções não 16:9
+          Positioned.fill(
+            child: ClipRect(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+                child: Transform.scale(
+                  scale: 1.2,
+                  child: Opacity(
+                    opacity: 0.35,
+                    child: _buildImage(fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Visualizador com suporte nativo a pinch-to-zoom (BoxFit.contain)
           Center(
             child: InteractiveViewer(
               minScale: 1.0,
               maxScale: 5.0,
               child: Hero(
                 tag: 'photo_${item.id}',
-                child: _buildImage(),
+                child: _buildImage(fit: BoxFit.contain),
               ),
             ),
           ),
 
-          // Painel inferior com metadados expandidos (One UI 9 Frosted Island)
+          // Painel inferior com metadados expandidos
           Positioned(
             left: 16,
             right: 16,
@@ -81,64 +97,67 @@ class PhotoDetailDialog extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.0),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      width: 1.0,
+                    ),
                   ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        strings.imageDetails,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            strings.imageDetails,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            item.formattedSize,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
+                      const Divider(color: Colors.white24, height: 16),
                       Text(
-                        item.formattedSize,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        '${strings.date}: ${item.formattedDate} ${strings.atTime} ${item.formattedTime}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${strings.dimensions}: ${item.formattedResolution}${item.ratioLabel.isNotEmpty ? ' (${item.ratioLabel})' : ''}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
                       ),
                     ],
                   ),
-                  const Divider(color: Colors.white24, height: 16),
-                  Text(
-                    '${strings.date}: ${item.formattedDate} ${strings.atTime} ${item.formattedTime}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${strings.dimensions}: ${item.formattedResolution}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
-    ],
-  ),
-);
+    );
   }
 
-  Widget _buildImage() {
+  Widget _buildImage({BoxFit fit = BoxFit.contain}) {
     if (cachedBytes != null) {
       return Image.memory(
         cachedBytes!,
-        fit: BoxFit.contain,
+        fit: fit,
       );
     }
     if (item.assetEntity != null) {
       return AssetEntityImage(
         item.assetEntity!,
         isOriginal: true,
-        fit: BoxFit.contain,
+        fit: fit,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
@@ -148,7 +167,7 @@ class PhotoDetailDialog extends StatelessWidget {
     if (item.mockImageUrl != null) {
       return Image.network(
         item.mockImageUrl!,
-        fit: BoxFit.contain,
+        fit: fit,
       );
     }
     return const Icon(Icons.broken_image, size: 72, color: Colors.white38);

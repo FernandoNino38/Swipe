@@ -165,6 +165,21 @@ class AppStrings {
   String get languageSubtitlePt => isEnglish ? 'Portuguese (Brazil)' : 'Português';
   String get languageSubtitleEn => isEnglish ? 'English (United States)' : 'Inglês';
   String get triagePreferences => isEnglish ? 'Triage Preferences' : 'Preferências de Triagem';
+  String get imageDisplayMode => isEnglish ? 'Image Display Mode' : 'Modo de Exibição das Fotos';
+  String get imageDisplayModeDesc => isEnglish
+      ? 'Choose how images with different proportions are presented'
+      : 'Como fotos com diferentes proporções devem ser apresentadas';
+  String get fitMode => isEnglish ? 'Smart Fit (Complete Photo)' : 'Ajustar (Foto Completa)';
+  String get fitModeDesc => isEnglish
+      ? 'Shows 100% of the photo without cropping, with ambient backdrop'
+      : 'Exibe 100% da foto sem cortes, com fundo ambiente desfocado';
+  String get fillMode => isEnglish ? 'Fill Screen (Crop)' : 'Preencher Tela (Recortar)';
+  String get fillModeDesc => isEnglish
+      ? 'Expands the photo to cover the entire card'
+      : 'Expande a foto para cobrir todo o card';
+  String get fitTooltip => isEnglish ? 'Fit to Screen (Full photo)' : 'Ajustar à Tela (Foto completa)';
+  String get fillTooltip => isEnglish ? 'Fill Screen (Zoomed)' : 'Preencher Tela (Com zoom)';
+  String get aspectRatio => isEnglish ? 'Aspect Ratio' : 'Proporção';
   String get aboutApp => isEnglish ? 'About Swipe' : 'Sobre o Swipe';
   String get aiCreditsTitle => isEnglish
       ? 'Engineered by Artificial Intelligence'
@@ -174,4 +189,17 @@ class AppStrings {
       : 'Criado pelo Antigravity (Google DeepMind) em colaboração com Fernando Nino.';
   String get sourceCode => isEnglish ? 'Source Code on GitHub' : 'Código Fonte no GitHub';
   String get appVersion => isEnglish ? 'Version' : 'Versão';
+  String get license => isEnglish ? 'License' : 'Licença';
+  String get mitLicense => 'MIT License';
+  String get developer => isEnglish ? 'Developer' : 'Desenvolvedor';
+  String get developerName => 'Fernando Nino';
+  String get madeWith => isEnglish
+      ? 'Made with Flutter & Dart'
+      : 'Feito com Flutter & Dart';
+  String get appDescription => isEnglish
+      ? 'A smart photo gallery triage app. Swipe through your photos, keep the best ones, and free up storage space.'
+      : 'Um app inteligente para triagem de fotos. Deslize pelas suas fotos, mantenha as melhores e libere espaço no armazenamento.';
+  String get viewOnGitHub => isEnglish ? 'View on GitHub' : 'Ver no GitHub';
+  String get viewLicense => isEnglish ? 'View License' : 'Ver Licença';
+  String get openSourceLicenses => isEnglish ? 'Open Source Licenses' : 'Licenças Open Source';
 }

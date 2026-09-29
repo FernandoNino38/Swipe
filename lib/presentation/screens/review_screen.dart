@@ -8,8 +8,8 @@ import '../../domain/controllers/triage_controller.dart';
 import '../../domain/models/triage_item.dart';
 import 'photo_detail_dialog.dart';
 
-/// Grade de Confirmação Final (PRD Seção 4 - Samsung One UI 9 Aesthetic)
-/// Exibe todas as fotos marcadas para exclusão (Soft-Delete) em formato de grade squircle.
+/// Grade de Confirmação Final
+/// Exibe todas as fotos marcadas para exclusão (Soft-Delete) em formato de grade.
 /// Permite ampliar imagens, desmarcar arquivos e acionar o Hard-Delete definitivo.
 class ReviewScreen extends StatelessWidget {
   const ReviewScreen({super.key});
@@ -32,7 +32,7 @@ class ReviewScreen extends StatelessWidget {
           ? _buildEmptyState(context, colorScheme, strings, isDark)
           : Column(
               children: [
-                // Banner Resumo de Espaço Recuperável One UI 9
+                // Banner Resumo de Espaço Recuperável
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   padding: const EdgeInsets.all(16),
@@ -99,7 +99,7 @@ class ReviewScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Grade de fotos marcadas (Soft-Delete) One UI 9
+                // Grade de fotos marcadas (Soft-Delete)
                 Expanded(
                   child: GridView.builder(
                     physics: const BouncingScrollPhysics(),
@@ -118,7 +118,7 @@ class ReviewScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Barra inferior com botão de exclusão definitiva (Hard Delete) estilo One UI 9
+                // Barra inferior com botão de exclusão definitiva (Hard Delete)
                 SafeArea(
                   top: false,
                   child: Padding(
@@ -238,12 +238,14 @@ class ReviewScreen extends StatelessWidget {
               ),
             ),
 
-            // Tamanho do arquivo na base
+            // Tamanho do arquivo na base e proporção
             Positioned(
               left: 8,
               bottom: 6,
               child: Text(
-                item.formattedSize,
+                item.ratioLabel.isNotEmpty
+                    ? '${item.formattedSize} • ${item.ratioLabel}'
+                    : item.formattedSize,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,
