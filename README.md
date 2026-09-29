@@ -8,8 +8,9 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Design](https://img.shields.io/badge/Design-Samsung%20One%20UI%209-0072DE?style=for-the-badge&logo=samsung&logoColor=white)](https://developer.samsung.com/one-ui)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+[![Release](https://img.shields.io/badge/Release-v0.10.0-blue?style=for-the-badge&logo=github)](https://github.com/FernandoNino38/Swipe/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <b>Organize, mantenha ou descarte fotos da sua galeria com rapidez e fluidez através de gestos intuitivos.</b><br>
