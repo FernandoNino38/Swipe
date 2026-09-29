@@ -1,5 +1,5 @@
 name: photo_triage
-description: "A new Flutter project."
+description: "Swipe - Smart photo gallery triage and decluttering app built with Flutter and Samsung One UI 9 design system."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
