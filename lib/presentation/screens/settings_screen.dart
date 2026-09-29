@@ -47,7 +47,7 @@ class SettingsScreen extends StatelessWidget {
                 _buildRadioTile<ThemeMode>(
                   context,
                   title: strings.themeSystem,
-                  subtitle: isDark ? 'Modo escuro ativo pelo sistema' : 'Modo claro ativo pelo sistema',
+                  subtitle: strings.themeSystemDesc(isDark),
                   icon: Icons.brightness_auto_rounded,
                   value: ThemeMode.system,
                   groupValue: controller.themeMode,
@@ -62,7 +62,7 @@ class SettingsScreen extends StatelessWidget {
                 _buildRadioTile<ThemeMode>(
                   context,
                   title: strings.themeLight,
-                  subtitle: 'Tema com superfícies limpas e claras',
+                  subtitle: strings.themeLightDesc,
                   icon: Icons.light_mode_rounded,
                   value: ThemeMode.light,
                   groupValue: controller.themeMode,
@@ -77,7 +77,7 @@ class SettingsScreen extends StatelessWidget {
                 _buildRadioTile<ThemeMode>(
                   context,
                   title: strings.themeDark,
-                  subtitle: 'Tema escuro AMOLED profundo com economia de bateria',
+                  subtitle: strings.themeDarkDesc,
                   icon: Icons.dark_mode_rounded,
                   value: ThemeMode.dark,
                   groupValue: controller.themeMode,
@@ -104,7 +104,7 @@ class SettingsScreen extends StatelessWidget {
                 _buildRadioTile<String>(
                   context,
                   title: strings.portuguese,
-                  subtitle: 'Português',
+                  subtitle: strings.languageSubtitlePt,
                   icon: Icons.translate_rounded,
                   value: 'pt',
                   groupValue: strings.isEnglish ? 'en' : 'pt',
@@ -119,7 +119,7 @@ class SettingsScreen extends StatelessWidget {
                 _buildRadioTile<String>(
                   context,
                   title: strings.english,
-                  subtitle: 'English',
+                  subtitle: strings.languageSubtitleEn,
                   icon: Icons.g_translate_rounded,
                   value: 'en',
                   groupValue: strings.isEnglish ? 'en' : 'pt',
@@ -143,7 +143,7 @@ class SettingsScreen extends StatelessWidget {
             context,
             child: Column(
               children: [
-                // Limite de Lote
+                // Limite de Lote (Review Limit) com Alto Contraste
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -171,22 +171,70 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: [20, 40, 60, 100, 0].map((limit) {
+                          children: TriageController.availableBatchLimits.map((limit) {
                             final isSelected = controller.batchLimit == limit;
                             final label = limit == 0 ? strings.allPhotosOption : '$limit';
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
-                              child: ChoiceChip(
-                                label: Text(label),
-                                selected: isSelected,
-                                onSelected: (_) {
-                                  HapticFeedback.selectionClick();
-                                  controller.setBatchLimit(limit);
-                                },
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    controller.setBatchLimit(limit);
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? colorScheme.primary
+                                          : (isDark ? const Color(0xFF232838) : const Color(0xFFEFF2F8)),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? (isDark ? Colors.white.withValues(alpha: 0.35) : colorScheme.primary)
+                                            : (isDark ? const Color(0xFF38435C) : const Color(0xFFCCD4E3)),
+                                        width: isSelected ? 1.5 : 1.2,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: colorScheme.primary.withValues(alpha: isDark ? 0.35 : 0.25),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isSelected)
+                                          const Padding(
+                                            padding: EdgeInsets.only(right: 6),
+                                            child: Icon(Icons.check_rounded, size: 16, color: Colors.white),
+                                          ),
+                                        Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : (isDark ? const Color(0xFFE2E7F5) : const Color(0xFF1E2533)),
+                                            letterSpacing: -0.1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             );
                           }).toList(),
@@ -320,7 +368,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${strings.appVersion} 0.11.1',
+                              '${strings.appVersion} 0.11.2',
                               style: TextStyle(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w600,

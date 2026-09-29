@@ -13,57 +13,65 @@ class AppStrings {
   }
 
   bool get isEnglish => locale.languageCode == 'en';
+  String get localeCode => isEnglish ? 'en_US' : 'pt_BR';
 
   // App & Navegação
   String get appTitle => 'Swipe';
   String get selectAlbum => isEnglish ? 'Select Album' : 'Selecionar Álbum';
   String get selectAlbumPrompt => isEnglish
-      ? 'Choose the gallery folder you want to triage:'
-      : 'Escolha a pasta da galeria que deseja triar:';
-  String get batchLimit => isEnglish ? 'Review Limit' : 'Limite de Verificação';
+      ? 'Choose the gallery album you want to organize:'
+      : 'Escolha o álbum da galeria que deseja organizar:';
+  String get batchLimit => isEnglish ? 'Review Limit' : 'Limite por Sessão';
   String get batchLimitPrompt => isEnglish
-      ? 'How many photos do you want to verify?'
-      : 'Quantas fotos deseja verificar nesta sessão?';
+      ? 'How many photos do you want to review per session?'
+      : 'Quantas fotos deseja revisar por sessão?';
   String get allPhotosOption => isEnglish ? 'All' : 'Todas';
   String get allPhotos => isEnglish ? 'All Photos' : 'Todas as Fotos';
   String get noAlbumsFound => isEnglish ? 'No albums found on device.' : 'Nenhum álbum encontrado no dispositivo.';
   String photosCount(int current, int total) =>
       isEnglish ? '$current of $total photos' : '$current de $total fotos';
-  String albumPhotos(int count) => isEnglish ? '$count photos' : '$count fotos';
-  String get undoRestored => isEnglish ? 'Photo restored to deck!' : 'Foto restaurada ao baralho!';
+  String albumPhotos(int count) => isEnglish
+      ? (count == 1 ? '1 photo' : '$count photos')
+      : (count == 1 ? '1 foto' : '$count fotos');
+  String get undoRestored => isEnglish ? 'Photo restored!' : 'Foto restaurada!';
 
   // Decisões dos Cards
   String get keep => isEnglish ? 'KEEP' : 'MANTER';
-  String get delete => isEnglish ? 'DELETE' : 'EXCLUIR';
+  String get delete => isEnglish ? 'DISCARD' : 'DESCARTAR';
   String get undo => isEnglish ? 'Undo' : 'Desfazer';
-  String get keepTooltip => isEnglish ? 'Keep Photo' : 'Manter Foto';
-  String get deleteTooltip => isEnglish ? 'Discard / Delete' : 'Descartar / Excluir';
+  String get keepTooltip => isEnglish ? 'Keep Photo (Swipe right)' : 'Manter Foto (Deslizar para direita)';
+  String get deleteTooltip => isEnglish ? 'Discard Photo (Swipe left)' : 'Descartar Foto (Deslizar para esquerda)';
 
   // Favoritos
   String get favorites => isEnglish ? 'Favorites' : 'Favoritos';
   String get addedToFavorites => isEnglish ? 'Photo added to Favorites!' : 'Foto adicionada aos Favoritos!';
-  String get favoriteTooltip => isEnglish ? 'Favorite Photo' : 'Favoritar Foto';
+  String get favoriteTooltip => isEnglish ? 'Favorite Photo (Hold to view)' : 'Favoritar Foto (Segure para ver)';
 
   // Lixeira & Revisão
   String get trash => isEnglish ? 'Trash' : 'Lixeira';
   String get reviewTrash => isEnglish ? 'Review Trash' : 'Revisar Lixeira';
   String get reviewTrashTitle => isEnglish ? 'Trash Review' : 'Revisão da Lixeira';
-  String photosForDeletion(int count) =>
-      isEnglish ? '$count photos marked for deletion' : '$count fotos para exclusão';
+  String photosForDeletion(int count) => isEnglish
+      ? (count == 1 ? '1 photo marked for deletion' : '$count photos marked for deletion')
+      : (count == 1 ? '1 foto marcada para exclusão' : '$count fotos marcadas para exclusão');
   String willFreeStorage(String storage) =>
       isEnglish ? 'Will free $storage of storage' : 'Liberará $storage de armazenamento';
   String permanentlyDeleteBtn(String storage) =>
       isEnglish ? 'Permanently Delete ($storage)' : 'Excluir Definitivamente ($storage)';
   String get emptyTrashTitle => isEnglish ? 'No photos in trash' : 'Nenhuma foto na lixeira';
   String get emptyTrashDesc => isEnglish
-      ? 'Photos swiped left will appear here for your review before permanent deletion.'
+      ? 'Photos swiped left will appear here for review before permanent deletion.'
       : 'As fotos descartadas deslizando para a esquerda aparecerão aqui para sua confirmação antes da exclusão física.';
 
   // Diálogo de confirmação de exclusão
   String get confirmDeleteTitle => isEnglish ? 'Permanent Deletion' : 'Exclusão Definitiva';
   String confirmDeleteMessage(int count, String storage) => isEnglish
-      ? 'Do you want to permanently delete $count photos? This will free $storage of storage and request native OS permission.'
-      : 'Deseja autorizar a exclusão física de $count fotos? Esta ação liberará $storage do armazenamento do aparelho e solicitará a confirmação nativa do sistema operacional.';
+      ? (count == 1
+          ? 'Do you want to permanently delete 1 photo? This will free $storage of storage and request system permission.'
+          : 'Do you want to permanently delete $count photos? This will free $storage of storage and request system permission.')
+      : (count == 1
+          ? 'Deseja autorizar a exclusão física de 1 foto? Esta ação liberará $storage do armazenamento do aparelho e solicitará a confirmação nativa do sistema operacional.'
+          : 'Deseja autorizar a exclusão física de $count fotos? Esta ação liberará $storage do armazenamento do aparelho e solicitará a confirmação nativa do sistema operacional.');
   String get cancel => isEnglish ? 'Cancel' : 'Cancelar';
   String get confirm => isEnglish ? 'Confirm' : 'Confirmar';
   String get cancelBtn => cancel;
@@ -78,7 +86,7 @@ class AppStrings {
       ? 'All photos evaluated.\n$count photos marked for deletion ($storage to free).'
       : 'Todas as fotos foram avaliadas.\n$count fotos marcadas para exclusão ($storage de espaço a liberar).';
   String get reviewAndFreeBtn => isEnglish ? 'Review & Free Space' : 'Revisar e Liberar Espaço';
-  String get restartTriageBtn => isEnglish ? 'Restart Triage' : 'Reiniciar Triagem';
+  String get restartTriageBtn => isEnglish ? 'Restart Session' : 'Reiniciar Sessão';
   String get changeAlbumBtn => isEnglish ? 'Change Album' : 'Trocar de Álbum';
 
   // Detalhes da Foto
@@ -86,6 +94,9 @@ class AppStrings {
   String get date => isEnglish ? 'Date' : 'Data';
   String get atTime => isEnglish ? 'at' : 'às';
   String get dimensions => isEnglish ? 'Dimensions' : 'Dimensões';
+  String get unknownDate => isEnglish ? 'Unknown date' : 'Data desc.';
+  String get unknownSize => isEnglish ? 'Unknown size' : 'Tamanho desc.';
+  String get unknownResolution => isEnglish ? 'Unknown res.' : 'Resolução desc.';
 
   // Ordenação
   String get sortBy => isEnglish ? 'Sort By' : 'Ordenar Por';
@@ -97,8 +108,8 @@ class AppStrings {
   String get favoritesTitle => isEnglish ? 'Favorites' : 'Fotos Favoritas';
   String get noFavoritesTitle => isEnglish ? 'No favorites yet' : 'Nenhuma foto favoritada';
   String get noFavoritesDesc => isEnglish
-      ? 'Photos marked with the heart icon will be collected here.'
-      : 'As fotos que você marcar com o coração ficarão guardadas aqui.';
+      ? 'Photos marked as favorites will appear here.'
+      : 'As fotos que você marcar como favoritas ficarão guardadas aqui.';
   String get removeFavoriteTooltip => isEnglish ? 'Remove from favorites' : 'Remover dos favoritos';
   String get favoriteRemoved => isEnglish ? 'Removed from favorites' : 'Removida dos favoritos';
   String get viewFavorites => isEnglish ? 'View Favorites' : 'Ver Favoritos';
@@ -106,8 +117,17 @@ class AppStrings {
   // Temas
   String get themeMode => isEnglish ? 'Theme' : 'Tema';
   String get themeSystem => isEnglish ? 'System' : 'Sistema';
+  String themeSystemDesc(bool isDark) => isEnglish
+      ? (isDark ? 'Dark mode enabled by system' : 'Light mode enabled by system')
+      : (isDark ? 'Modo escuro ativo pelo sistema' : 'Modo claro ativo pelo sistema');
   String get themeLight => isEnglish ? 'Light' : 'Claro';
+  String get themeLightDesc => isEnglish
+      ? 'Clean surfaces and bright aesthetics'
+      : 'Tema com superfícies limpas e claras';
   String get themeDark => isEnglish ? 'Dark' : 'Escuro';
+  String get themeDarkDesc => isEnglish
+      ? 'Deep AMOLED dark theme for battery savings'
+      : 'Tema escuro AMOLED profundo com economia de bateria';
 
   // Dashboard de Conclusão da Sessão
   String get sessionStats => isEnglish ? 'Session Breakdown' : 'Resumo da Sessão';
@@ -133,8 +153,8 @@ class AppStrings {
       ? 'Kept photos history cleared'
       : 'Histórico de fotos mantidas limpo com sucesso';
   String totalKeptCount(int count) => isEnglish
-      ? '$count photos kept'
-      : '$count fotos mantidas no histórico';
+      ? (count == 1 ? '1 photo kept in history' : '$count photos kept in history')
+      : (count == 1 ? '1 foto mantida no histórico' : '$count fotos mantidas no histórico');
 
   // Configurações & Sobre
   String get settings => isEnglish ? 'Settings' : 'Configurações';
@@ -142,6 +162,8 @@ class AppStrings {
   String get language => isEnglish ? 'Language' : 'Idioma';
   String get portuguese => 'Português (Brasil)';
   String get english => 'English (US)';
+  String get languageSubtitlePt => isEnglish ? 'Portuguese (Brazil)' : 'Português';
+  String get languageSubtitleEn => isEnglish ? 'English (United States)' : 'Inglês';
   String get triagePreferences => isEnglish ? 'Triage Preferences' : 'Preferências de Triagem';
   String get aboutApp => isEnglish ? 'About Swipe' : 'Sobre o Swipe';
   String get aiCreditsTitle => isEnglish
@@ -153,4 +175,3 @@ class AppStrings {
   String get sourceCode => isEnglish ? 'Source Code on GitHub' : 'Código Fonte no GitHub';
   String get appVersion => isEnglish ? 'Version' : 'Versão';
 }
-

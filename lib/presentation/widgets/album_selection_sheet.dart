@@ -83,46 +83,55 @@ class AlbumSelectionSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Limite por Sessão
+                    // Limite por Sessão (Review Limit) com Alto Contraste
                     Row(
                       children: [
                         Icon(
                           Icons.timelapse_rounded,
-                          size: 18,
+                          size: 20,
                           color: colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          strings.batchLimit,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.1,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                strings.batchLimit,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  letterSpacing: -0.1,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                strings.batchLimitPrompt,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: TriageController.availableBatchLimits.map((limit) {
                           final isSelected = controller.batchLimit == limit;
                           final label = limit == 0 ? strings.allPhotosOption : '$limit';
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              selected: isSelected,
-                              label: Text(label),
-                              avatar: isSelected
-                                  ? const Icon(Icons.check_rounded, size: 16)
-                                  : null,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              onSelected: (_) {
-                                controller.setBatchLimit(limit);
-                              },
-                            ),
+                          return _buildSelectableChip(
+                            context: context,
+                            isSelected: isSelected,
+                            label: label,
+                            isDark: isDark,
+                            onTap: () {
+                              controller.setBatchLimit(limit);
+                            },
                           );
                         }).toList(),
                       ),
@@ -136,67 +145,57 @@ class AlbumSelectionSheet extends StatelessWidget {
                       ),
                     ),
 
-                    // Ordenar Por
+                    // Ordenar Por com Alto Contraste
                     Row(
                       children: [
                         Icon(
                           Icons.sort_rounded,
-                          size: 18,
+                          size: 20,
                           color: colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           strings.sortBy,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
                             letterSpacing: -0.1,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          FilterChip(
-                            selected: controller.sortOrder == PhotoSortOrder.newest,
-                            label: Text(strings.sortNewest),
-                            avatar: controller.sortOrder == PhotoSortOrder.newest
-                                ? const Icon(Icons.check_rounded, size: 16)
-                                : const Icon(Icons.schedule_rounded, size: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            onSelected: (_) {
+                          _buildSelectableChip(
+                            context: context,
+                            isSelected: controller.sortOrder == PhotoSortOrder.newest,
+                            label: strings.sortNewest,
+                            icon: Icons.schedule_rounded,
+                            isDark: isDark,
+                            onTap: () {
                               controller.setSortOrder(PhotoSortOrder.newest);
                             },
                           ),
-                          const SizedBox(width: 8),
-                          FilterChip(
-                            selected: controller.sortOrder == PhotoSortOrder.largest,
-                            label: Text(strings.sortLargest),
-                            avatar: controller.sortOrder == PhotoSortOrder.largest
-                                ? const Icon(Icons.check_rounded, size: 16)
-                                : const Icon(Icons.data_usage_rounded, size: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            onSelected: (_) {
+                          _buildSelectableChip(
+                            context: context,
+                            isSelected: controller.sortOrder == PhotoSortOrder.largest,
+                            label: strings.sortLargest,
+                            icon: Icons.data_usage_rounded,
+                            isDark: isDark,
+                            onTap: () {
                               controller.setSortOrder(PhotoSortOrder.largest);
                             },
                           ),
-                          const SizedBox(width: 8),
-                          FilterChip(
-                            selected: controller.sortOrder == PhotoSortOrder.oldest,
-                            label: Text(strings.sortOldest),
-                            avatar: controller.sortOrder == PhotoSortOrder.oldest
-                                ? const Icon(Icons.check_rounded, size: 16)
-                                : const Icon(Icons.history_rounded, size: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            onSelected: (_) {
+                          _buildSelectableChip(
+                            context: context,
+                            isSelected: controller.sortOrder == PhotoSortOrder.oldest,
+                            label: strings.sortOldest,
+                            icon: Icons.history_rounded,
+                            isDark: isDark,
+                            onTap: () {
                               controller.setSortOrder(PhotoSortOrder.oldest);
                             },
                           ),
@@ -389,7 +388,7 @@ class AlbumSelectionSheet extends StatelessWidget {
                               ),
                             ),
                             title: Text(
-                              album.name,
+                              album.localizedName(strings),
                               style: TextStyle(
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                 fontSize: 15,
@@ -435,6 +434,84 @@ class AlbumSelectionSheet extends StatelessWidget {
                       ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectableChip({
+    required BuildContext context,
+    required bool isSelected,
+    required String label,
+    required VoidCallback onTap,
+    IconData? icon,
+    bool isDark = false,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? colorScheme.primary
+                  : (isDark ? const Color(0xFF232838) : const Color(0xFFEFF2F8)),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? (isDark ? Colors.white.withValues(alpha: 0.35) : colorScheme.primary)
+                    : (isDark ? const Color(0xFF38435C) : const Color(0xFFCCD4E3)),
+                width: isSelected ? 1.5 : 1.2,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: isDark ? 0.35 : 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSelected)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 6),
+                    child: Icon(Icons.check_rounded, size: 16, color: Colors.white),
+                  )
+                else if (icon != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(
+                      icon,
+                      size: 16,
+                      color: isDark ? const Color(0xFFB0BACD) : const Color(0xFF555F74),
+                    ),
+                  ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? const Color(0xFFE2E7F5) : const Color(0xFF1E2533)),
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

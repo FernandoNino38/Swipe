@@ -67,9 +67,10 @@ class MediaService {
           albums.add(
             GalleryAlbum(
               id: path.id,
-              name: path.isAll ? 'Todas as Fotos' : path.name,
+              name: path.name,
               assetCount: count,
               pathEntity: path,
+              isAll: path.isAll,
             ),
           );
         }
@@ -215,6 +216,7 @@ class MediaService {
         id: 'all',
         name: 'Todas as Fotos',
         assetCount: 6,
+        isAll: true,
       ),
       GalleryAlbum(
         id: 'camera',

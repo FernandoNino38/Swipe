@@ -123,17 +123,32 @@ class M3ExpressiveTheme {
         ),
       ),
 
-      // Chips One UI 9 (Pílulas arredondadas com bordas suaves)
+      // Chips com alto contraste, contornos nítidos e feedback tátil
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(chipBorderRadius),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF38435C) : const Color(0xFFCCD4E3),
+            width: 1.0,
+          ),
         ),
-        side: BorderSide.none,
-        backgroundColor: isDark ? const Color(0xFF202430) : const Color(0xFFECEEF5),
-        selectedColor: colorScheme.primaryContainer,
-        labelStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
+        backgroundColor: isDark ? const Color(0xFF222838) : const Color(0xFFEFF2F8),
+        selectedColor: colorScheme.primary,
+        secondarySelectedColor: colorScheme.primary,
+        checkmarkColor: Colors.white,
+        iconTheme: IconThemeData(
+          size: 16,
+          color: isDark ? const Color(0xFFE2E7F5) : const Color(0xFF1E2533),
+        ),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w700,
           fontSize: 13,
+          color: isDark ? const Color(0xFFE2E7F5) : const Color(0xFF1E2533),
+        ),
+        secondaryLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+          color: Colors.white,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),

@@ -94,7 +94,7 @@ class _DeckScreenState extends State<DeckScreen> {
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
-                          controller.selectedAlbum?.name ?? strings.allPhotos,
+                          controller.selectedAlbum?.localizedName(strings) ?? strings.allPhotos,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,

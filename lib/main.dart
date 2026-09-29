@@ -1,6 +1,7 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/m3_expressive_theme.dart';
 import 'domain/controllers/triage_controller.dart';
@@ -61,6 +62,13 @@ class _PhotoTriageAppView extends StatelessWidget {
           ),
           themeMode: controller.themeMode,
           locale: controller.customLocale,
+          localeResolutionCallback: (locale, supportedLocales) {
+            final activeLocale = controller.customLocale ?? locale;
+            if (activeLocale != null) {
+              Intl.defaultLocale = activeLocale.languageCode == 'en' ? 'en_US' : 'pt_BR';
+            }
+            return activeLocale;
+          },
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,

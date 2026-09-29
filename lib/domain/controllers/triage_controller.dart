@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../core/cache/sliding_window_cache.dart';
 import '../../core/services/media_service.dart';
@@ -76,14 +77,19 @@ class TriageController extends ChangeNotifier {
   void toggleLocale() {
     if (_customLocale?.languageCode == 'en') {
       _customLocale = const Locale('pt', 'BR');
+      Intl.defaultLocale = 'pt_BR';
     } else {
       _customLocale = const Locale('en', 'US');
+      Intl.defaultLocale = 'en_US';
     }
     notifyListeners();
   }
 
   void setLocale(Locale? locale) {
     _customLocale = locale;
+    if (locale != null) {
+      Intl.defaultLocale = locale.languageCode == 'en' ? 'en_US' : 'pt_BR';
+    }
     notifyListeners();
   }
 

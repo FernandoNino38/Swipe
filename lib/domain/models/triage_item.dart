@@ -26,7 +26,9 @@ class TriageItem {
 
   /// Tamanho formatado amigável (ex: "4.8 MB")
   String get formattedSize {
-    if (fileSizeBytes <= 0) return 'Tamanho desc.';
+    if (fileSizeBytes <= 0) {
+      return (Intl.defaultLocale?.startsWith('en') ?? false) ? 'Unknown size' : 'Tamanho desc.';
+    }
     final mb = fileSizeBytes / (1024 * 1024);
     if (mb < 1.0) {
       final kb = fileSizeBytes / 1024;
@@ -35,9 +37,14 @@ class TriageItem {
     return '${mb.toStringAsFixed(1)} MB';
   }
 
-  /// Data legível (ex: "24 de Set, 2026")
+  /// Data legível conforme a língua do sistema ou selecionada
   String get formattedDate {
-    return DateFormat('d MMM, yyyy', 'pt_BR').format(createDateTime);
+    final loc = Intl.defaultLocale ?? 'pt_BR';
+    try {
+      return DateFormat.yMMMd(loc).format(createDateTime);
+    } catch (_) {
+      return DateFormat('d MMM, yyyy').format(createDateTime);
+    }
   }
 
   /// Hora legível (ex: "14:45")
@@ -47,7 +54,9 @@ class TriageItem {
 
   /// Resolução e megapixels calculados
   String get formattedResolution {
-    if (width <= 0 || height <= 0) return 'Resolução desc.';
+    if (width <= 0 || height <= 0) {
+      return (Intl.defaultLocale?.startsWith('en') ?? false) ? 'Unknown res.' : 'Resolução desc.';
+    }
     final mp = (width * height) / 1000000;
     return '$width × $height (${mp.toStringAsFixed(1)} MP)';
   }
