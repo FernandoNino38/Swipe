@@ -1,10 +1,11 @@
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../core/localization/app_strings.dart';
 import '../../domain/models/triage_item.dart';
 
-/// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom)
+/// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom - One UI 9)
 class PhotoDetailDialog extends StatelessWidget {
   final TriageItem item;
   final Uint8List? cachedBytes;
@@ -66,18 +67,22 @@ class PhotoDetailDialog extends StatelessWidget {
             ),
           ),
 
-          // Painel inferior com metadados expandidos
+          // Painel inferior com metadados expandidos (One UI 9 Frosted Island)
           Positioned(
             left: 16,
             right: 16,
             bottom: 24,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white24, width: 0.8),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.0),
+                  ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,9 +120,11 @@ class PhotoDetailDialog extends StatelessWidget {
               ),
             ),
           ),
-        ],
+        ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildImage() {

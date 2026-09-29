@@ -11,6 +11,13 @@ enum MediaPermissionStatus {
   restricted,
 }
 
+/// Critério de ordenação de fotos para triagem
+enum PhotoSortOrder {
+  newest,
+  largest,
+  oldest,
+}
+
 /// Serviço responsável pelo acesso offline-first à galeria de fotos local
 /// via MediaStore (Android) e PhotoKit (iOS), sem nenhuma requisição de rede.
 class MediaService {
@@ -82,10 +89,13 @@ class MediaService {
   /// Carrega uma página de fotos leves de um álbum específico
   /// (metadados apenas, sem decodificar bitmaps brutos).
   /// [limit] define a quantidade máxima de fotos a verificar (0 = sem limite / todas as fotos).
+  /// [excludedIds] conjunto de IDs de fotos já triadas/mantidas para serem ignoradas.
   static Future<List<TriageItem>> loadLocalPhotos({
     GalleryAlbum? album,
     int page = 0,
     int limit = 100,
+    PhotoSortOrder sortOrder = PhotoSortOrder.newest,
+    Set<String>? excludedIds,
   }) async {
     try {
       AssetPathEntity? targetPath = album?.pathEntity;
@@ -100,43 +110,89 @@ class MediaService {
       }
 
       if (targetPath == null) {
-        return _getDemoFallbackItems(albumId: album?.id, limit: limit);
+        return _getDemoFallbackItems(
+          albumId: album?.id,
+          limit: limit,
+          sortOrder: sortOrder,
+          excludedIds: excludedIds,
+        );
       }
 
       final int totalAssets = await targetPath.assetCountAsync;
-      final int countToFetch = (limit <= 0 || limit > totalAssets) ? totalAssets : limit;
-
-      final List<AssetEntity> entities = await targetPath.getAssetListRange(
-        start: 0,
-        end: countToFetch,
-      );
-
-      if (entities.isEmpty) {
-        return _getDemoFallbackItems(albumId: album?.id);
+      if (totalAssets == 0) {
+        return _getDemoFallbackItems(
+          albumId: album?.id,
+          limit: limit,
+          sortOrder: sortOrder,
+          excludedIds: excludedIds,
+        );
       }
 
+      final int targetCount = (limit <= 0 || limit > totalAssets) ? totalAssets : limit;
       final List<TriageItem> items = [];
-      for (final entity in entities) {
-        final file = await entity.file;
-        final fileLength = file != null ? await file.length() : 0;
 
-        items.add(
-          TriageItem(
-            id: entity.id,
-            title: entity.title ?? 'IMG_${entity.createDateTime.millisecondsSinceEpoch}',
-            createDateTime: entity.createDateTime,
-            fileSizeBytes: fileLength,
-            width: entity.width,
-            height: entity.height,
-            assetEntity: entity,
-          ),
+      // Carrega fotos iterativamente em páginas para filtrar as já triadas
+      const int chunkSize = 80;
+      int currentStart = 0;
+
+      while (currentStart < totalAssets && (limit <= 0 || items.length < targetCount)) {
+        final int currentEnd = (currentStart + chunkSize > totalAssets)
+            ? totalAssets
+            : currentStart + chunkSize;
+
+        final List<AssetEntity> batch = await targetPath.getAssetListRange(
+          start: currentStart,
+          end: currentEnd,
         );
+
+        if (batch.isEmpty) break;
+
+        for (final entity in batch) {
+          if (excludedIds != null && excludedIds.contains(entity.id)) {
+            continue;
+          }
+
+          final file = await entity.file;
+          final fileLength = file != null ? await file.length() : 0;
+
+          items.add(
+            TriageItem(
+              id: entity.id,
+              title: entity.title ?? 'IMG_${entity.createDateTime.millisecondsSinceEpoch}',
+              createDateTime: entity.createDateTime,
+              fileSizeBytes: fileLength,
+              width: entity.width,
+              height: entity.height,
+              assetEntity: entity,
+            ),
+          );
+
+          if (limit > 0 && items.length >= targetCount) {
+            break;
+          }
+        }
+
+        currentStart = currentEnd;
+      }
+
+      // Aplica a ordenação inteligente
+      if (sortOrder == PhotoSortOrder.largest) {
+        items.sort((a, b) => b.fileSizeBytes.compareTo(a.fileSizeBytes));
+      } else if (sortOrder == PhotoSortOrder.oldest) {
+        items.sort((a, b) => a.createDateTime.compareTo(b.createDateTime));
+      } else {
+        items.sort((a, b) => b.createDateTime.compareTo(a.createDateTime));
       }
 
       return items;
     } catch (e) {
       debugPrint('Falha ao ler fotos reais: $e. Ativando itens de demonstração.');
-      return _getDemoFallbackItems(albumId: album?.id);
+      return _getDemoFallbackItems(
+        albumId: album?.id,
+        limit: limit,
+        sortOrder: sortOrder,
+        excludedIds: excludedIds,
+      );
     }
   }
 
@@ -179,7 +235,12 @@ class MediaService {
   }
 
   /// Dados de demonstração offline para testes em emuladores ou ambientes sem fotos reais
-  static List<TriageItem> _getDemoFallbackItems({String? albumId, int limit = 0}) {
+  static List<TriageItem> _getDemoFallbackItems({
+    String? albumId,
+    int limit = 0,
+    PhotoSortOrder sortOrder = PhotoSortOrder.newest,
+    Set<String>? excludedIds,
+  }) {
     final now = DateTime.now();
     final allItems = [
       TriageItem(
@@ -247,6 +308,18 @@ class MediaService {
       result = [allItems[4], allItems[5]];
     } else {
       result = allItems;
+    }
+
+    if (excludedIds != null && excludedIds.isNotEmpty) {
+      result = result.where((item) => !excludedIds.contains(item.id)).toList();
+    }
+
+    if (sortOrder == PhotoSortOrder.largest) {
+      result.sort((a, b) => b.fileSizeBytes.compareTo(a.fileSizeBytes));
+    } else if (sortOrder == PhotoSortOrder.oldest) {
+      result.sort((a, b) => a.createDateTime.compareTo(b.createDateTime));
+    } else {
+      result.sort((a, b) => b.createDateTime.compareTo(a.createDateTime));
     }
 
     if (limit > 0 && limit < result.length) {

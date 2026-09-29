@@ -59,7 +59,7 @@ class _PhotoTriageAppView extends StatelessWidget {
             dynamicColorScheme: effectiveDark,
             brightness: Brightness.dark,
           ),
-          themeMode: ThemeMode.system,
+          themeMode: controller.themeMode,
           locale: controller.customLocale,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,

@@ -1,6 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:photo_triage/core/services/media_service.dart';
+import 'package:photo_triage/core/services/triage_history_service.dart';
 import 'package:photo_triage/domain/controllers/triage_controller.dart';
 import 'package:photo_triage/domain/models/album_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -9,6 +13,8 @@ void main() {
     late TriageController controller;
 
     setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      TriageHistoryService.resetForTesting();
       controller = TriageController();
       await controller.initialize();
     });
@@ -120,6 +126,76 @@ void main() {
 
       await controller.setBatchLimit(0); // 0 = all
       expect(controller.batchLimit, equals(0));
+    });
+
+    test('PhotoSortOrder can be changed and reloads items', () async {
+      expect(controller.sortOrder, equals(PhotoSortOrder.newest));
+
+      await controller.setSortOrder(PhotoSortOrder.largest);
+      expect(controller.sortOrder, equals(PhotoSortOrder.largest));
+      expect(controller.items.isNotEmpty, isTrue);
+
+      await controller.setSortOrder(PhotoSortOrder.oldest);
+      expect(controller.sortOrder, equals(PhotoSortOrder.oldest));
+    });
+
+    test('ThemeMode can be toggled and set explicitly', () {
+      expect(controller.themeMode, equals(ThemeMode.system));
+
+      controller.toggleThemeMode();
+      expect(controller.themeMode, equals(ThemeMode.light));
+
+      controller.toggleThemeMode();
+      expect(controller.themeMode, equals(ThemeMode.dark));
+
+      controller.toggleThemeMode();
+      expect(controller.themeMode, equals(ThemeMode.system));
+
+      controller.setThemeMode(ThemeMode.dark);
+      expect(controller.themeMode, equals(ThemeMode.dark));
+    });
+
+    test('Favorites gallery allows un-favoriting items', () async {
+      final item = controller.currentItem!;
+      await controller.favoriteCurrentPhoto();
+
+      expect(controller.favoritesCount, equals(1));
+      expect(controller.favoriteItems.length, equals(1));
+      expect(controller.favoriteItems.first.id, equals(item.id));
+
+      controller.removeFromFavorites(item);
+      expect(controller.favoritesCount, equals(0));
+      expect(controller.favoriteItems.isEmpty, isTrue);
+    });
+
+    test('Swiping right persists kept photo and re-initialize skips already kept photos', () async {
+      final firstItemId = controller.currentItem!.id;
+      await controller.swipeRight();
+      expect(controller.persistentKeptCount, equals(1));
+
+      // Simulando reabertura do aplicativo
+      final newSessionController = TriageController();
+      await newSessionController.initialize();
+
+      // A foto mantida não deve ser mais carregada na nova sessão
+      expect(newSessionController.items.any((i) => i.id == firstItemId), isFalse);
+
+      // Desabilitando a opção de ocultar fotos mantidas traz ela de volta
+      await newSessionController.toggleHideKeptPhotos();
+      expect(newSessionController.items.any((i) => i.id == firstItemId), isTrue);
+    });
+
+    test('Undo removes kept photo from persistent history', () async {
+      final firstItemId = controller.currentItem!.id;
+      await controller.swipeRight();
+      expect(controller.persistentKeptCount, equals(1));
+
+      await controller.undo();
+      expect(controller.persistentKeptCount, equals(0));
+
+      final newSessionController = TriageController();
+      await newSessionController.initialize();
+      expect(newSessionController.items.any((i) => i.id == firstItemId), isTrue);
     });
   });
 }

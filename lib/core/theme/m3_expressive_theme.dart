@@ -1,83 +1,136 @@
 import 'package:flutter/material.dart';
 
-/// Define o tema visual estritamente alinhado com o Material Design 3 (M3) Expressive.
-/// Incorpora Dynamic Color (Material You), tipografia de alto contraste para sobreposição
-/// de fotos e formas orgânicas com raios pronunciados (28dp a 32dp).
+/// Define o tema visual inspirado na Samsung One UI 9 (Galaxy Aesthetic)
+/// com arquitetura de ergonomia de uso com uma mão (Viewing area vs Interaction area),
+/// geometria orgânica squircle (raios pronunciados de 30dp a 34dp), cores One UI vibrantes
+/// (Samsung Blue, Emerald Mint, Coral Red, Rose Pink) e superfícies AMOLED translúcidas.
 class M3ExpressiveTheme {
-  // Cores de fallback caso o dispositivo não suporte Dynamic Color (Android < 12 ou Desktop)
-  static const Color defaultSeedColor = Color(0xFF6750A4);
-  static const Color positiveActionColor = Color(0xFF2E7D32); // Manter (Verde M3)
-  static const Color negativeActionColor = Color(0xFFB3261E); // Excluir (Vermelho M3)
-  static const Color accentWarningColor = Color(0xFFF57C00); // Mover/Atenção (Laranja M3)
+  // Paleta de Cores Signature da Samsung One UI 9
+  static const Color oneUiBlue = Color(0xFF0072DE); // Samsung Electric Blue
+  static const Color oneUiMint = Color(0xFF2AC06D); // Samsung Emerald Mint (Manter)
+  static const Color oneUiCoral = Color(0xFFFA5252); // Samsung Coral Red (Excluir)
+  static const Color oneUiRose = Color(0xFFFF3366); // Samsung Rose Pink (Favorito)
+  static const Color oneUiAmber = Color(0xFFFF922B); // Samsung Amber
+  static const Color oneUiPurple = Color(0xFF7952B3); // Samsung Warm Violet
 
-  // Raios expressivos M3
-  static const double cardBorderRadius = 32.0;
+  // Fallbacks e compatibilidade de constantes existentes
+  static const Color defaultSeedColor = oneUiBlue;
+  static const Color positiveActionColor = oneUiMint;
+  static const Color negativeActionColor = oneUiCoral;
+  static const Color accentWarningColor = oneUiAmber;
+
+  // Raios One UI 9 Squircle & Superellipse
+  static const double cardBorderRadius = 34.0;
+  static const double capsuleRadius = 30.0;
   static const double pillBorderRadius = 24.0;
-  static const double chipBorderRadius = 16.0;
-  static const double sheetBorderRadius = 28.0;
+  static const double chipBorderRadius = 18.0;
+  static const double sheetBorderRadius = 32.0;
 
-  /// Constrói o ThemeData com suporte a Dynamic Color
+  // Superfícies One UI 9
+  static const Color lightScaffold = Color(0xFFF3F4F8); // Clean Light One UI Canvas
+  static const Color lightCardSurface = Color(0xFFFFFFFF);
+  static const Color darkScaffold = Color(0xFF0A0C10); // Deep AMOLED Black Canvas
+  static const Color darkCardSurface = Color(0xFF161922); // Deep Charcoal Card
+
+  /// Constrói o ThemeData com estilo One UI 9
   static ThemeData buildTheme({
     ColorScheme? dynamicColorScheme,
     Brightness brightness = Brightness.light,
   }) {
+    final isDark = brightness == Brightness.dark;
+
     final baseColorScheme = dynamicColorScheme ??
         ColorScheme.fromSeed(
-          seedColor: defaultSeedColor,
+          seedColor: oneUiBlue,
           brightness: brightness,
         );
 
-    // Ajusta o ColorScheme para expressividade e contraste
     final colorScheme = baseColorScheme.copyWith(
-      surfaceContainerLowest: brightness == Brightness.dark
-          ? const Color(0xFF0F0F13)
-          : const Color(0xFFFFFFFF),
-      surfaceContainerLow: brightness == Brightness.dark
-          ? const Color(0xFF1B1B20)
-          : const Color(0xFFF7F2FA),
-      surfaceContainer: brightness == Brightness.dark
-          ? const Color(0xFF212026)
-          : const Color(0xFFF3EDF7),
-      surfaceContainerHigh: brightness == Brightness.dark
-          ? const Color(0xFF2C2A31)
-          : const Color(0xFFECE6F0),
-      surfaceContainerHighest: brightness == Brightness.dark
-          ? const Color(0xFF37343C)
-          : const Color(0xFFE6E0E9),
+      primary: isDark ? const Color(0xFF388BFD) : oneUiBlue,
+      onPrimary: Colors.white,
+      primaryContainer: isDark ? const Color(0xFF0D3868) : const Color(0xFFE3F0FF),
+      onPrimaryContainer: isDark ? const Color(0xFFD0E6FF) : const Color(0xFF004085),
+
+      secondary: isDark ? const Color(0xFF4DD0E1) : const Color(0xFF0288D1),
+      onSecondary: Colors.white,
+      secondaryContainer: isDark ? const Color(0xFF133842) : const Color(0xFFE1F5FE),
+      onSecondaryContainer: isDark ? const Color(0xFFB2EBF2) : const Color(0xFF01579B),
+
+      surface: isDark ? darkScaffold : lightScaffold,
+      onSurface: isDark ? const Color(0xFFF0F3F8) : const Color(0xFF1C1E23),
+      onSurfaceVariant: isDark ? const Color(0xFFA0A6B5) : const Color(0xFF5F6575),
+
+      surfaceContainerLowest: isDark ? const Color(0xFF060709) : const Color(0xFFFFFFFF),
+      surfaceContainerLow: isDark ? const Color(0xFF10131A) : const Color(0xFFF7F8FC),
+      surfaceContainer: isDark ? darkCardSurface : lightCardSurface,
+      surfaceContainerHigh: isDark ? const Color(0xFF202430) : const Color(0xFFECEEF5),
+      surfaceContainerHighest: isDark ? const Color(0xFF2B3040) : const Color(0xFFE2E5F0),
+
+      outline: isDark ? const Color(0xFF3D4455) : const Color(0xFFCFD5E2),
+      outlineVariant: isDark ? const Color(0xFF252B37) : const Color(0xFFE4E7F0),
+
+      error: isDark ? const Color(0xFFFF6B6B) : oneUiCoral,
+      errorContainer: isDark ? const Color(0xFF4A1515) : const Color(0xFFFFE8E8),
+      onErrorContainer: isDark ? const Color(0xFFFFD2D2) : const Color(0xFF8B1212),
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: isDark ? darkScaffold : lightScaffold,
 
-      // Tipografia M3 Expressiva com legibilidade aprimorada
-      textTheme: _buildExpressiveTextTheme(colorScheme),
+      // Tipografia One UI 9 com legibilidade em grandes cabeçalhos
+      textTheme: _buildOneUiTextTheme(colorScheme),
 
-      // Cartões com raios orgânicos expressivos
+      // AppBar com One UI Viewing Area (limpo, transparente com título expressivo)
+      appBarTheme: AppBarTheme(
+        backgroundColor: isDark ? darkScaffold : lightScaffold,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        ),
+      ),
+
+      // Cartões One UI 9 Squircle
       cardTheme: CardThemeData(
-        elevation: 4.0,
+        elevation: 0,
+        color: isDark ? darkCardSurface : lightCardSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(cardBorderRadius),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF252A36) : const Color(0xFFECEEF5),
+            width: 1,
+          ),
         ),
         clipBehavior: Clip.antiAliasWithSaveLayer,
       ),
 
-      // Botões de ação flutuante (FAB) M3 Expressive
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(pillBorderRadius),
+      // Botões One UI 9 (Pill arredondados e confortáveis)
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(pillBorderRadius),
+          ),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         ),
-        elevation: 3.0,
-        highlightElevation: 6.0,
       ),
 
-      // Chips de Ação Rápida
+      // Chips One UI 9 (Pílulas arredondadas com bordas suaves)
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(chipBorderRadius),
         ),
+        side: BorderSide.none,
+        backgroundColor: isDark ? const Color(0xFF202430) : const Color(0xFFECEEF5),
+        selectedColor: colorScheme.primaryContainer,
         labelStyle: const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 13,
@@ -85,18 +138,24 @@ class M3ExpressiveTheme {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
 
-      // Diálogos e Bottom Sheets Expressivos
+      // Diálogos e Bottom Sheets One UI 9
       dialogTheme: DialogThemeData(
+        backgroundColor: isDark ? const Color(0xFF1B1E28) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(sheetBorderRadius),
         ),
+        elevation: 8,
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        shape: RoundedRectangleBorder(
+        backgroundColor: isDark ? const Color(0xFF161922) : Colors.white,
+        modalBackgroundColor: isDark ? const Color(0xFF161922) : Colors.white,
+        elevation: 12,
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(sheetBorderRadius),
           ),
         ),
+        dragHandleColor: isDark ? const Color(0xFF4E5568) : const Color(0xFFCFD5E2),
       ),
 
       // Efeito de ondulação (Ripple) elástico e fluido
@@ -104,46 +163,59 @@ class M3ExpressiveTheme {
     );
   }
 
-  static TextTheme _buildExpressiveTextTheme(ColorScheme colorScheme) {
+  static TextTheme _buildOneUiTextTheme(ColorScheme colorScheme) {
     return const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
+        letterSpacing: -0.6,
       ),
       headlineMedium: TextStyle(
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: FontWeight.w700,
-        letterSpacing: -0.25,
+        letterSpacing: -0.4,
       ),
       headlineSmall: TextStyle(
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
       ),
       titleLarge: TextStyle(
-        fontSize: 20,
+        fontSize: 19,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.1,
+        letterSpacing: -0.1,
       ),
       titleMedium: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.15,
+        letterSpacing: 0.1,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
       ),
       bodyLarge: TextStyle(
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0.5,
+        letterSpacing: 0.2,
       ),
       bodyMedium: TextStyle(
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0.25,
+        letterSpacing: 0.15,
       ),
       labelLarge: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.1,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
       ),
     );
   }

@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../core/localization/app_strings.dart';
@@ -48,6 +48,7 @@ class TriageCardState extends State<TriageCard>
   double _dragAngle = 0.0;
   double _cardOpacity = 1.0;
   bool _isExiting = false;
+  bool _hasTriggeredHaptic = false;
 
   static const double swipeThreshold = 120.0;
   static const double velocityThreshold = 650.0;
@@ -119,6 +120,7 @@ class TriageCardState extends State<TriageCard>
     if (widget.item.id != oldWidget.item.id) {
       _animController.stop();
       _isExiting = false;
+      _hasTriggeredHaptic = false;
       if (widget.enterFromOffset != null) {
         _dragOffset = widget.enterFromOffset!;
         _dragAngle = (widget.enterFromOffset!.dx.sign * -0.22);
@@ -178,6 +180,14 @@ class TriageCardState extends State<TriageCard>
       // Rotação proporcional contínua ao deslocamento horizontal
       _dragAngle = (_dragOffset.dx / 320.0).clamp(-0.25, 0.25);
     });
+
+    final isPastThreshold = _dragOffset.dx.abs() >= swipeThreshold;
+    if (isPastThreshold && !_hasTriggeredHaptic) {
+      _hasTriggeredHaptic = true;
+      HapticFeedback.selectionClick();
+    } else if (!isPastThreshold && _hasTriggeredHaptic) {
+      _hasTriggeredHaptic = false;
+    }
 
     final progress = (_dragOffset.dx / swipeThreshold).clamp(-1.0, 1.0);
     widget.onDragProgress?.call(progress);
@@ -263,6 +273,8 @@ class TriageCardState extends State<TriageCard>
   void _flingCard(double direction, {double velocityX = 0}) {
     if (_isExiting) return;
     _isExiting = true;
+    _hasTriggeredHaptic = false;
+    HapticFeedback.lightImpact();
 
     final screenWidth = MediaQuery.of(context).size.width;
     final targetX = direction * (screenWidth + 220);
@@ -324,6 +336,7 @@ class TriageCardState extends State<TriageCard>
   }
 
   void _snapBack() {
+    _hasTriggeredHaptic = false;
     _offsetAnimation = Tween<Offset>(
       begin: _dragOffset,
       end: Offset.zero,
@@ -381,12 +394,16 @@ class TriageCardState extends State<TriageCard>
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      width: 1.2,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.22),
-                        blurRadius: 22,
+                        blurRadius: 26,
                         offset: const Offset(0, 10),
-                        spreadRadius: 2,
+                        spreadRadius: 1,
                       ),
                     ],
                   ),
@@ -489,16 +506,16 @@ class TriageCardState extends State<TriageCard>
                                       vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: M3ExpressiveTheme.positiveActionColor,
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: M3ExpressiveTheme.oneUiMint,
+                                      borderRadius: BorderRadius.circular(22),
                                       border: Border.all(
                                         color: Colors.white,
-                                        width: 2.5,
+                                        width: 2.2,
                                       ),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withValues(alpha: 0.25),
-                                          blurRadius: 10,
+                                          blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
                                       ],
@@ -542,16 +559,16 @@ class TriageCardState extends State<TriageCard>
                                       vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: M3ExpressiveTheme.negativeActionColor,
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: M3ExpressiveTheme.oneUiCoral,
+                                      borderRadius: BorderRadius.circular(22),
                                       border: Border.all(
                                         color: Colors.white,
-                                        width: 2.5,
+                                        width: 2.2,
                                       ),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withValues(alpha: 0.25),
-                                          blurRadius: 10,
+                                          blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
                                       ],

@@ -65,6 +65,9 @@ class AppStrings {
       ? 'Do you want to permanently delete $count photos? This will free $storage of storage and request native OS permission.'
       : 'Deseja autorizar a exclusão física de $count fotos? Esta ação liberará $storage do armazenamento do aparelho e solicitará a confirmação nativa do sistema operacional.';
   String get cancel => isEnglish ? 'Cancel' : 'Cancelar';
+  String get confirm => isEnglish ? 'Confirm' : 'Confirmar';
+  String get cancelBtn => cancel;
+  String get confirmBtn => confirm;
   String get yesDelete => isEnglish ? 'Yes, Delete' : 'Sim, Excluir';
   String get deleteSuccess => isEnglish ? 'Photos deleted successfully!' : 'Fotos excluídas com sucesso!';
   String get deleteFailed => isEnglish ? 'Deletion cancelled or failed.' : 'Falha ou cancelamento na exclusão pelo sistema.';
@@ -83,4 +86,53 @@ class AppStrings {
   String get date => isEnglish ? 'Date' : 'Data';
   String get atTime => isEnglish ? 'at' : 'às';
   String get dimensions => isEnglish ? 'Dimensions' : 'Dimensões';
+
+  // Ordenação
+  String get sortBy => isEnglish ? 'Sort By' : 'Ordenar Por';
+  String get sortNewest => isEnglish ? 'Newest' : 'Mais Recentes';
+  String get sortLargest => isEnglish ? 'Largest Files' : 'Maiores Arquivos';
+  String get sortOldest => isEnglish ? 'Oldest' : 'Mais Antigas';
+
+  // Galeria de Favoritos
+  String get favoritesTitle => isEnglish ? 'Favorites' : 'Fotos Favoritas';
+  String get noFavoritesTitle => isEnglish ? 'No favorites yet' : 'Nenhuma foto favoritada';
+  String get noFavoritesDesc => isEnglish
+      ? 'Photos marked with the heart icon will be collected here.'
+      : 'As fotos que você marcar com o coração ficarão guardadas aqui.';
+  String get removeFavoriteTooltip => isEnglish ? 'Remove from favorites' : 'Remover dos favoritos';
+  String get favoriteRemoved => isEnglish ? 'Removed from favorites' : 'Removida dos favoritos';
+  String get viewFavorites => isEnglish ? 'View Favorites' : 'Ver Favoritos';
+
+  // Temas
+  String get themeMode => isEnglish ? 'Theme' : 'Tema';
+  String get themeSystem => isEnglish ? 'System' : 'Sistema';
+  String get themeLight => isEnglish ? 'Light' : 'Claro';
+  String get themeDark => isEnglish ? 'Dark' : 'Escuro';
+
+  // Dashboard de Conclusão da Sessão
+  String get sessionStats => isEnglish ? 'Session Breakdown' : 'Resumo da Sessão';
+  String get keptPhotos => isEnglish ? 'Kept' : 'Mantidas';
+  String get deletedPhotos => isEnglish ? 'Trash' : 'Lixeira';
+  String get favoritedPhotos => isEnglish ? 'Favorites' : 'Favoritas';
+  String get storageFreed => isEnglish ? 'Storage to free' : 'Espaço a liberar';
+
+  // Histórico de Fotos Mantidas (Persistência)
+  String get hideKeptPhotos => isEnglish ? 'Hide kept photos' : 'Ocultar fotos já mantidas';
+  String get hideKeptPhotosDesc => isEnglish
+      ? 'Do not show photos you have already chosen to keep'
+      : 'Não exibir fotos que você já decidiu manter';
+  String get allPhotosTriagedTitle => isEnglish ? 'All caught up!' : 'Tudo em dia!';
+  String get allPhotosTriagedDesc => isEnglish
+      ? 'All photos in this album have already been reviewed and kept.'
+      : 'Todas as fotos deste álbum já foram triadas e mantidas.';
+  String get resetKeptHistory => isEnglish ? 'Reset kept history' : 'Resetar fotos mantidas';
+  String get resetKeptHistoryConfirm => isEnglish
+      ? 'Clear history of kept photos? They will appear in triage again.'
+      : 'Limpar o histórico de fotos mantidas? Elas voltarão a aparecer na triagem.';
+  String get keptHistoryCleared => isEnglish
+      ? 'Kept photos history cleared'
+      : 'Histórico de fotos mantidas limpo com sucesso';
+  String totalKeptCount(int count) => isEnglish
+      ? '$count photos kept'
+      : '$count fotos mantidas no histórico';
 }

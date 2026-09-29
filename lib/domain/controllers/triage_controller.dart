@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../core/cache/sliding_window_cache.dart';
 import '../../core/services/media_service.dart';
+import '../../core/services/triage_history_service.dart';
 import '../models/album_item.dart';
 import '../models/gallery_album.dart';
 import '../models/triage_item.dart';
@@ -40,6 +41,16 @@ class TriageController extends ChangeNotifier {
   int _batchLimit = 100;
   static const List<int> availableBatchLimits = [30, 60, 100, 200, 500, 0];
 
+  // Ordenação inteligente de fotos
+  PhotoSortOrder _sortOrder = PhotoSortOrder.newest;
+
+  // Modo de tema M3 (Sistema / Claro / Escuro)
+  ThemeMode _themeMode = ThemeMode.system;
+
+  // Histórico persistente de fotos mantidas (evita repetições ao reentrar no app)
+  Set<String> _persistentKeptIds = {};
+  bool _hideKeptPhotos = true;
+
   // Getters públicos
   List<TriageItem> get items => _items;
   int get currentIndex => _currentIndex;
@@ -52,7 +63,15 @@ class TriageController extends ChangeNotifier {
   GalleryAlbum? get selectedAlbum => _selectedAlbum;
   Locale? get customLocale => _customLocale;
   int get batchLimit => _batchLimit;
+  PhotoSortOrder get sortOrder => _sortOrder;
+  ThemeMode get themeMode => _themeMode;
+  bool get hideKeptPhotos => _hideKeptPhotos;
+  int get persistentKeptCount => _persistentKeptIds.length;
+  bool get isCurrentAlbumExhausted => !_isLoading && _items.isEmpty;
   TriageAction? get lastAction => _undoStack.isNotEmpty ? _undoStack.last : null;
+
+  List<TriageItem> get favoriteItems =>
+      List.unmodifiable(_albumAssignments['favorites'] ?? []);
 
   void toggleLocale() {
     if (_customLocale?.languageCode == 'en') {
@@ -68,6 +87,74 @@ class TriageController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleThemeMode() {
+    if (_themeMode == ThemeMode.system) {
+      _themeMode = ThemeMode.light;
+    } else if (_themeMode == ThemeMode.light) {
+      _themeMode = ThemeMode.dark;
+    } else {
+      _themeMode = ThemeMode.system;
+    }
+    notifyListeners();
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    notifyListeners();
+  }
+
+  /// Alterna a opção de ocultar fotos já mantidas de triagens anteriores
+  Future<void> toggleHideKeptPhotos() async {
+    _hideKeptPhotos = !_hideKeptPhotos;
+    await TriageHistoryService.setHideKeptPhotos(_hideKeptPhotos);
+    await initialize();
+  }
+
+  /// Limpa o histórico persistente de fotos mantidas
+  Future<void> clearKeptHistory() async {
+    await TriageHistoryService.clearKeptHistory();
+    _persistentKeptIds.clear();
+    await initialize();
+  }
+
+  /// Altera o critério de ordenação de fotos e recarrega os itens
+  Future<void> setSortOrder(PhotoSortOrder order) async {
+    if (_sortOrder == order) return;
+    _sortOrder = order;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _items = await MediaService.loadLocalPhotos(
+        album: _selectedAlbum,
+        limit: _batchLimit,
+        sortOrder: _sortOrder,
+        excludedIds: _hideKeptPhotos ? _persistentKeptIds : null,
+      );
+      _currentIndex = 0;
+      _softDeleteQueue.clear();
+      _keptItems.clear();
+      _albumAssignments.clear();
+      _undoStack.clear();
+
+      await _refreshSlidingWindow();
+      _extractColorSchemeFromCurrentItem();
+    } catch (e) {
+      _errorMessage = 'Falha ao reordenar fotos: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Remove uma foto dos Favoritos diretamente da galeria de favoritos
+  void removeFromFavorites(TriageItem item) {
+    _albumAssignments['favorites']?.removeWhere((e) => e.id == item.id);
+    _undoStack.removeWhere((a) =>
+        a.item.id == item.id && a.type == TriageActionType.moveToAlbum);
+    notifyListeners();
+  }
+
   /// Altera o limite de fotos da sessão e recarrega os itens
   Future<void> setBatchLimit(int limit) async {
     if (_batchLimit == limit) return;
@@ -79,6 +166,8 @@ class TriageController extends ChangeNotifier {
       _items = await MediaService.loadLocalPhotos(
         album: _selectedAlbum,
         limit: _batchLimit,
+        sortOrder: _sortOrder,
+        excludedIds: _hideKeptPhotos ? _persistentKeptIds : null,
       );
       _currentIndex = 0;
       _softDeleteQueue.clear();
@@ -141,12 +230,16 @@ class TriageController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      _hideKeptPhotos = await TriageHistoryService.shouldHideKeptPhotos();
+      _persistentKeptIds = await TriageHistoryService.getKeptPhotoIds();
       _permissionStatus = await MediaService.requestPermissions();
       _availableAlbums = await MediaService.fetchAlbums();
       _selectedAlbum = _availableAlbums.isNotEmpty ? _availableAlbums.first : null;
       _items = await MediaService.loadLocalPhotos(
         album: _selectedAlbum,
         limit: _batchLimit,
+        sortOrder: _sortOrder,
+        excludedIds: _hideKeptPhotos ? _persistentKeptIds : null,
       );
 
       _currentIndex = 0;
@@ -177,6 +270,8 @@ class TriageController extends ChangeNotifier {
       _items = await MediaService.loadLocalPhotos(
         album: album,
         limit: _batchLimit,
+        sortOrder: _sortOrder,
+        excludedIds: _hideKeptPhotos ? _persistentKeptIds : null,
       );
       _currentIndex = 0;
       _softDeleteQueue.clear();
@@ -203,6 +298,10 @@ class TriageController extends ChangeNotifier {
     _undoStack.add(
       TriageAction(item: item, type: TriageActionType.keep),
     );
+
+    // Registra a foto no histórico persistente de mantidas
+    _persistentKeptIds.add(item.id);
+    await TriageHistoryService.markAsKept(item.id);
 
     _advanceDeck();
   }
@@ -266,6 +365,8 @@ class TriageController extends ChangeNotifier {
     switch (lastAction.type) {
       case TriageActionType.keep:
         _keptItems.remove(lastAction.item);
+        _persistentKeptIds.remove(lastAction.item.id);
+        await TriageHistoryService.unmarkAsKept(lastAction.item.id);
         break;
       case TriageActionType.softDelete:
         _softDeleteQueue.remove(lastAction.item);
