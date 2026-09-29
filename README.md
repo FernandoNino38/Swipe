@@ -7,14 +7,14 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-[![Design](https://img.shields.io/badge/Design-Samsung%20One%20UI%209-0072DE?style=for-the-badge&logo=samsung&logoColor=white)](https://developer.samsung.com/one-ui)
+[![Built with](https://img.shields.io/badge/Built%20by-Antigravity%20AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google)
 [![Release](https://img.shields.io/badge/Release-v0.10.0-blue?style=for-the-badge&logo=github)](https://github.com/FernandoNino38/Swipe/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <b>Organize, mantenha ou descarte fotos da sua galeria com rapidez e fluidez através de gestos intuitivos.</b><br>
-  Construído com base na estética premium <b>Samsung One UI 9</b>, processamento 100% offline e física de cards interativa.
+  Desenvolvido integralmente por Inteligência Artificial (<b>Antigravity</b> da Google DeepMind), com processamento 100% offline e física de cards interativa.
 </p>
 
 </div>
@@ -34,10 +34,10 @@ O **Swipe** é um aplicativo móvel voltado para a organização e limpeza de ga
 
 ## ✨ Recursos Principais
 
-### 🎨 Visual Inspirado na Samsung One UI 9
-- **Cápsula Flutuante Unificada (*Now Island / Floating Capsule*)**: Barra de ações com efeito de vidro fosco translúcido (`BackdropFilter` gaussian blur), contornos sutis e botões squircle ergonomicamente posicionados para uso com uma mão.
-- **Geometria Squircle & Superellipse**: Cartões com raios pronunciados de **34dp**, oferecendo harmonia visual e acabamento refinado.
-- **Paleta de Cores Signature**: Samsung Electric Blue (`#0072DE`), Emerald Mint (`#2AC06D`), Coral Red (`#FA5252`) e Rose Pink (`#FF3366`).
+### 🎨 Design Moderno & Expressivo
+- **Cápsula Flutuante Unificada (*Floating Island*)**: Barra de ações com efeito de vidro fosco translúcido (`BackdropFilter` gaussian blur), contornos sutis e botões ergonomicamente posicionados para uso com uma mão.
+- **Geometria Arredondada & Suave**: Cartões com cantos arredondados de **34dp**, oferecendo harmonia visual e acabamento refinado.
+- **Paleta de Cores Harmônica**: Electric Blue (`#0072DE`), Emerald Mint (`#2AC06D`), Coral Red (`#FA5252`) e Rose Pink (`#FF3366`).
 - **Modo Escuro AMOLED Profundo**: Preto absoluto (`#0A0C10`) com superfícies em cinza carvão (`#161922`), otimizando o consumo de bateria em telas OLED.
 
 ### 🃏 Baralho de Fotos com Física de Gestos
@@ -85,7 +85,7 @@ lib/
 ├── core/
 │   ├── localization/         # Strings e internacionalização (PT/EN)
 │   ├── services/             # Serviços de mídia e histórico persistente
-│   └── theme/                # Tokens de design e tema Samsung One UI 9
+│   └── theme/                # Tokens de design e tema visual do app
 ├── domain/
 │   ├── controllers/          # Controller de triagem e regras de negócio
 │   └── models/               # Modelos de dados e ações
@@ -134,6 +134,16 @@ lib/
 
 ---
 
+## 🤖 Desenvolvimento por Inteligência Artificial (Créditos)
+
+Este projeto foi **100% idealizado, planejado, arquitetado e programado por Inteligência Artificial** através do **Antigravity**, o assistente e agente avançado de programação desenvolvido pela equipe da **Google DeepMind**, em sessão de pair-programming com **Fernando Nino**.
+
+- 🧠 **Engenharia de Software & IA**: Antigravity (Google DeepMind)
+- 💡 **Direção de Produto & Requisitos**: [Fernando Nino](https://github.com/FernandoNino38)
+- 🛠️ **Implementação**: Código Dart & Flutter nativo, regras de negócio reativas, persistência local e animações físicas sem templates pré-fabricados.
+
+---
+
 ## 📄 Licença
 
 Este projeto está sob a licença **MIT** - consulte o arquivo [LICENSE](LICENSE) para obter mais detalhes.
@@ -141,5 +151,5 @@ Este projeto está sob a licença **MIT** - consulte o arquivo [LICENSE](LICENSE
 ---
 
 <div align="center">
-  Desenvolvido com carinho e foco em usabilidade.
+  Desenvolvido por <b>Antigravity</b> (Google DeepMind) em colaboração com <b>Fernando Nino</b>.
 </div>
