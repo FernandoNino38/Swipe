@@ -8,7 +8,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Built with](https://img.shields.io/badge/Built%20by-Antigravity%20AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google)
-[![Release](https://img.shields.io/badge/Release-v0.10.0-blue?style=for-the-badge&logo=github)](https://github.com/FernandoNino38/Swipe/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v0.11.0-blue?style=for-the-badge&logo=github)](https://github.com/FernandoNino38/Swipe/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
@@ -34,11 +34,15 @@ O **Swipe** é um aplicativo móvel voltado para a organização e limpeza de ga
 
 ## ✨ Recursos Principais
 
-### 🎨 Design Moderno & Expressivo
-- **Cápsula Flutuante Unificada (*Floating Island*)**: Barra de ações com efeito de vidro fosco translúcido (`BackdropFilter` gaussian blur), contornos sutis e botões ergonomicamente posicionados para uso com uma mão.
-- **Geometria Arredondada & Suave**: Cartões com cantos arredondados de **34dp**, oferecendo harmonia visual e acabamento refinado.
-- **Paleta de Cores Harmônica**: Electric Blue (`#0072DE`), Emerald Mint (`#2AC06D`), Coral Red (`#FA5252`) e Rose Pink (`#FF3366`).
-- **Modo Escuro AMOLED Profundo**: Preto absoluto (`#0A0C10`) com superfícies em cinza carvão (`#161922`), otimizando o consumo de bateria em telas OLED.
+### 🎨 Design Moderno & Experiência Renovada (v0.11)
+- **Cabeçalho com Tipografia Nativa & Seletor Adjacente**: Título **Swipe** em destaque utilizando tipografia padrão do sistema e seletor compacto de álbuns/pastas integrado diretamente ao lado do título.
+- **Área de Foto Maximizada**: Aproveitamento total do display para inspeção detalhada das fotografias, eliminando textos flutuantes laterais e mantendo bordas perimetrais luminosas e reativas em tempo real (verde para manter, vermelho para descartar).
+- **Barra de Ações Flutuante com 5 Controles**: Lixeira com badge de itens marcados, Botão de Descarte rápido, Desfazer (Undo), Manter (Keep) e Favoritos (com suporte a toque rápido e toque longo para ver favoritos).
+- **Nova Tela de Configurações**:
+  - Aparência: Alternância suave entre tema do Sistema, Claro e Escuro (AMOLED).
+  - Idioma: Alternância em tempo real entre Português e Inglês.
+  - Preferências de Triagem: Configuração de tamanho do lote (20, 40, 60, 100 ou Todas) e ativação/limpeza da memória de fotos mantidas.
+  - Créditos e Código-fonte: Atribuição à IA de engenharia (Antigravity by Google DeepMind) e links para o repositório.
 
 ### 🃏 Baralho de Fotos com Física de Gestos
 - Transição contínua com escala responsiva e rotação angular proporcional à velocidade do toque.

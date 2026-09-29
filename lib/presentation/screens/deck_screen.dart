@@ -11,6 +11,7 @@ import '../widgets/triage_card.dart';
 import 'favorites_screen.dart';
 import 'photo_detail_dialog.dart';
 import 'review_screen.dart';
+import 'settings_screen.dart';
 
 /// Tela principal de triagem em tela cheia com baralho de cards dinâmico (M3 Expressive),
 /// transição física contínua entre cards, animação expressiva de Desfazer (Undo),
@@ -47,268 +48,101 @@ class _DeckScreenState extends State<DeckScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () => AlbumSelectionSheet.show(context, controller),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF1B1E28)
-                  : const Color(0xFFE8EBF2),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF2E3545)
-                    : const Color(0xFFD6DBE7),
-                width: 1.0,
+        titleSpacing: 16,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Row(
+          children: [
+            // Título Swipe grande com fontes padrão do sistema
+            const Text(
+              'Swipe',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.6,
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.photo_library_rounded,
-                      size: 16,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        controller.selectedAlbum?.name ?? strings.appTitle,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-                  ],
-                ),
-                if (controller.totalCards > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          strings.photosCount(
-                            (controller.currentIndex + 1).clamp(1, controller.totalCards),
-                            controller.totalCards,
-                          ),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (controller.batchLimit > 0) ...[
-                          Text(
-                            ' • ${controller.batchLimit} max',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ],
+            const SizedBox(width: 10),
+            // Seletor de pasta ao lado do título
+            Flexible(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => AlbumSelectionSheet.show(context, controller),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1B1E28)
+                        : const Color(0xFFE8EBF2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF2E3545)
+                          : const Color(0xFFD6DBE7),
+                      width: 1.0,
                     ),
                   ),
-              ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.photo_library_rounded,
+                        size: 15,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          controller.selectedAlbum?.name ?? strings.allPhotos,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: strings.settings,
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 6),
+        ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(6.0),
+          preferredSize: const Size.fromHeight(4.0),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(2),
               child: LinearProgressIndicator(
                 value: controller.progressPercentage,
                 backgroundColor: isDark
                     ? const Color(0xFF1E222D)
                     : const Color(0xFFE2E6EF),
                 valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                minHeight: 4,
+                minHeight: 3,
               ),
             ),
           ),
         ),
-        actions: [
-          // Alternador de Modo de Tema (Sistema / Claro / Escuro)
-          IconButton(
-            tooltip: '${strings.themeMode}: ${controller.themeMode == ThemeMode.system ? strings.themeSystem : controller.themeMode == ThemeMode.light ? strings.themeLight : strings.themeDark}',
-            icon: Icon(
-              controller.themeMode == ThemeMode.system
-                  ? Icons.brightness_auto_rounded
-                  : controller.themeMode == ThemeMode.light
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-            ),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              controller.toggleThemeMode();
-            },
-          ),
-
-          // Alternador de Idioma (PT / EN)
-          IconButton(
-            tooltip: strings.isEnglish ? 'Mudar para Português' : 'Switch to English',
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colorScheme.outlineVariant),
-              ),
-              child: Text(
-                strings.isEnglish ? 'EN' : 'PT',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              controller.toggleLocale();
-            },
-          ),
-
-          // Botão de Favoritos no topo com animação de contagem e toque longo para ver galeria
-          GestureDetector(
-            onLongPress: () {
-              HapticFeedback.selectionClick();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const FavoritesScreen(),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: AnimatedScale(
-                scale: controller.favoritesCount > 0 ? 1.0 : 0.95,
-                duration: const Duration(milliseconds: 200),
-                child: Badge(
-                  isLabelVisible: controller.favoritesCount > 0,
-                  label: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-                    child: Text(
-                      '${controller.favoritesCount}',
-                      key: ValueKey(controller.favoritesCount),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  backgroundColor: M3ExpressiveTheme.oneUiRose,
-                  child: IconButton.filledTonal(
-                    tooltip: controller.currentItem != null
-                        ? strings.favoriteTooltip
-                        : strings.viewFavorites,
-                    style: IconButton.styleFrom(
-                      backgroundColor: isDark
-                          ? const Color(0xFF381522)
-                          : const Color(0xFFFFE8F0),
-                      foregroundColor: isDark
-                          ? const Color(0xFFFF6699)
-                          : M3ExpressiveTheme.oneUiRose,
-                    ),
-                    icon: const Icon(Icons.favorite_rounded),
-                    onPressed: () {
-                      if (controller.currentItem != null) {
-                        HapticFeedback.lightImpact();
-                        if (_topCardKey.currentState != null) {
-                          _topCardKey.currentState!.animateFavorite(() {
-                            setState(() {
-                              _dragProgress = 0.0;
-                              _undoEntranceOffset = null;
-                            });
-                            controller.favoriteCurrentPhoto();
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                duration: const Duration(milliseconds: 900),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.favorite_rounded, color: M3ExpressiveTheme.oneUiRose, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text(strings.addedToFavorites),
-                                  ],
-                                ),
-                              ),
-                            );
-                          });
-                        } else {
-                          controller.favoriteCurrentPhoto();
-                        }
-                      } else {
-                        HapticFeedback.selectionClick();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const FavoritesScreen(),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Botão com Badge para a Grade de Revisão da Lixeira
-          Padding(
-            padding: const EdgeInsets.only(right: 12, left: 4),
-            child: AnimatedScale(
-              scale: controller.softDeleteCount > 0 ? 1.0 : 0.95,
-              duration: const Duration(milliseconds: 200),
-              child: Badge(
-                isLabelVisible: controller.softDeleteCount > 0,
-                label: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-                  child: Text(
-                    '${controller.softDeleteCount}',
-                    key: ValueKey(controller.softDeleteCount),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                backgroundColor: M3ExpressiveTheme.oneUiCoral,
-                child: IconButton.filledTonal(
-                  tooltip: '${strings.reviewTrash} (${controller.formattedReclaimableStorage})',
-                  style: IconButton.styleFrom(
-                    backgroundColor: isDark
-                        ? const Color(0xFF381518)
-                        : const Color(0xFFFFE8E8),
-                    foregroundColor: isDark
-                        ? const Color(0xFFFF8585)
-                        : M3ExpressiveTheme.oneUiCoral,
-                  ),
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ReviewScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: controller.isLoading
@@ -414,62 +248,6 @@ class _DeckScreenState extends State<DeckScreen> {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              left: 8,
-                              child: IgnorePointer(
-                                child: AnimatedScale(
-                                  scale: 1.0 + (0.12 * redIntensity),
-                                  duration: const Duration(milliseconds: 120),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                                    decoration: BoxDecoration(
-                                      color: (isDark ? const Color(0xFF381518) : const Color(0xFFFFE8E8)).withValues(
-                                        alpha: 0.85 + (0.15 * redIntensity),
-                                      ),
-                                      borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(
-                                        color: M3ExpressiveTheme.oneUiCoral.withValues(
-                                          alpha: 0.4 + (0.5 * redIntensity),
-                                        ),
-                                        width: 1.5 + (0.5 * redIntensity),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: M3ExpressiveTheme.oneUiCoral.withValues(
-                                            alpha: 0.15 + (0.25 * redIntensity),
-                                          ),
-                                          blurRadius: 8 + (8 * redIntensity),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.close_rounded,
-                                          color: isDark ? const Color(0xFFFF8585) : M3ExpressiveTheme.oneUiCoral,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        RotatedBox(
-                                          quarterTurns: 3,
-                                          child: Text(
-                                            strings.delete,
-                                            style: TextStyle(
-                                              color: isDark ? const Color(0xFFFF8585) : M3ExpressiveTheme.oneUiCoral,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 1.5,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
                             // Indicador lateral direito: Borda Verde (Manter) - Reage ao gesto
                             Positioned(
                               right: 0,
@@ -499,68 +277,15 @@ class _DeckScreenState extends State<DeckScreen> {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              right: 8,
-                              child: IgnorePointer(
-                                child: AnimatedScale(
-                                  scale: 1.0 + (0.12 * greenIntensity),
-                                  duration: const Duration(milliseconds: 120),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                                    decoration: BoxDecoration(
-                                      color: (isDark ? const Color(0xFF102E21) : const Color(0xFFE7F9F0)).withValues(
-                                        alpha: 0.85 + (0.15 * greenIntensity),
-                                      ),
-                                      borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(
-                                        color: M3ExpressiveTheme.oneUiMint.withValues(
-                                          alpha: 0.4 + (0.5 * greenIntensity),
-                                        ),
-                                        width: 1.5 + (0.5 * greenIntensity),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: M3ExpressiveTheme.oneUiMint.withValues(
-                                            alpha: 0.15 + (0.25 * greenIntensity),
-                                          ),
-                                          blurRadius: 8 + (8 * greenIntensity),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.check_rounded,
-                                          color: isDark ? const Color(0xFF5CE6A1) : M3ExpressiveTheme.oneUiMint,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        RotatedBox(
-                                          quarterTurns: 3,
-                                          child: Text(
-                                            strings.keep,
-                                            style: TextStyle(
-                                              color: isDark ? const Color(0xFF5CE6A1) : M3ExpressiveTheme.oneUiMint,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 1.5,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
 
-                      // Rodapé com os 3 botões primários conectados à animação do card ativo e Desfazer
+                      // Rodapé com os 5 botões de ação: Lixeira, Excluir, Desfazer, Manter, Favorito
                       QuickActionsBar(
                         canUndo: controller.canUndo,
+                        trashCount: controller.softDeleteCount,
+                        favoritesCount: controller.favoritesCount,
                         onUndo: () {
                           HapticFeedback.lightImpact();
                           final last = controller.lastAction;
@@ -620,6 +345,62 @@ class _DeckScreenState extends State<DeckScreen> {
                           } else {
                             controller.swipeRight();
                           }
+                        },
+                        onOpenTrash: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ReviewScreen(),
+                            ),
+                          );
+                        },
+                        onFavorite: () {
+                          if (controller.currentItem != null) {
+                            HapticFeedback.lightImpact();
+                            if (_topCardKey.currentState != null) {
+                              _topCardKey.currentState!.animateFavorite(() {
+                                setState(() {
+                                  _dragProgress = 0.0;
+                                  _undoEntranceOffset = null;
+                                });
+                                controller.favoriteCurrentPhoto();
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(milliseconds: 900),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    content: Row(
+                                      children: [
+                                        const Icon(Icons.favorite_rounded, color: M3ExpressiveTheme.oneUiRose, size: 20),
+                                        const SizedBox(width: 8),
+                                        Text(strings.addedToFavorites),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              });
+                            } else {
+                              controller.favoriteCurrentPhoto();
+                            }
+                          } else {
+                            HapticFeedback.selectionClick();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const FavoritesScreen(),
+                              ),
+                            );
+                          }
+                        },
+                        onOpenFavorites: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const FavoritesScreen(),
+                            ),
+                          );
                         },
                       ),
                       const SizedBox(height: 8),

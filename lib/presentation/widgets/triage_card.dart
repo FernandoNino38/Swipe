@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
-import '../../core/localization/app_strings.dart';
-import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/models/triage_item.dart';
 import 'metadata_pill.dart';
 
@@ -372,9 +370,6 @@ class TriageCardState extends State<TriageCard>
 
   @override
   Widget build(BuildContext context) {
-    final double dragProgress = (_dragOffset.dx / swipeThreshold).clamp(-1.0, 1.0);
-    final strings = AppStrings.of(context);
-
     return GestureDetector(
       onPanUpdate: widget.isTopCard ? _onPanUpdate : null,
       onPanEnd: widget.isTopCard ? _onPanEnd : null,
@@ -391,44 +386,44 @@ class TriageCardState extends State<TriageCard>
               child: Material(
                 type: MaterialType.transparency,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.14),
-                      width: 1.2,
+                      width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.22),
-                        blurRadius: 26,
-                        offset: const Offset(0, 10),
+                        blurRadius: 20,
+                        offset: const Offset(0, 6),
                         spreadRadius: 1,
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
+                    borderRadius: BorderRadius.circular(24),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         // Imagem da Foto
                         _buildImageContent(),
 
-                        // Degradê de alto contraste na base para leitura dos metadados M3
+                        // Degradê sutil na base para leitura dos metadados
                         Positioned(
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          height: 180,
+                          height: 130,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.bottomCenter,
                                 end: Alignment.topCenter,
                                 colors: [
-                                  Colors.black.withValues(alpha: 0.85),
-                                  Colors.black.withValues(alpha: 0.4),
+                                  Colors.black.withValues(alpha: 0.82),
+                                  Colors.black.withValues(alpha: 0.35),
                                   Colors.transparent,
                                 ],
                               ),
@@ -438,9 +433,9 @@ class TriageCardState extends State<TriageCard>
 
                         // Overlay de Metadados e Informações do Arquivo
                         Positioned(
-                          left: 20,
-                          right: 20,
-                          bottom: 24,
+                          left: 14,
+                          right: 14,
+                          bottom: 14,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
@@ -451,7 +446,7 @@ class TriageCardState extends State<TriageCard>
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 20,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   shadows: [
                                     Shadow(
@@ -462,10 +457,10 @@ class TriageCardState extends State<TriageCard>
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Wrap(
-                                spacing: 8,
-                                runSpacing: 6,
+                                spacing: 6,
+                                runSpacing: 4,
                                 children: [
                                   MetadataPill(
                                     icon: Icons.calendar_today_rounded,
@@ -488,112 +483,6 @@ class TriageCardState extends State<TriageCard>
                             ],
                           ),
                         ),
-
-                        // Badge Dinâmico de Decisão: "MANTER" (Direita)
-                        if (dragProgress > 0)
-                          Positioned(
-                            top: 40,
-                            left: 32,
-                            child: Opacity(
-                              opacity: dragProgress.abs().clamp(0.0, 1.0),
-                              child: Transform.scale(
-                                scale: 0.85 + (0.15 * dragProgress.abs().clamp(0.0, 1.0)),
-                                child: Transform.rotate(
-                                  angle: -0.2,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: M3ExpressiveTheme.oneUiMint,
-                                      borderRadius: BorderRadius.circular(22),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2.2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.25),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          strings.keep,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                        // Badge Dinâmico de Decisão: "EXCLUIR" (Esquerda)
-                        if (dragProgress < 0)
-                          Positioned(
-                            top: 40,
-                            right: 32,
-                            child: Opacity(
-                              opacity: dragProgress.abs().clamp(0.0, 1.0),
-                              child: Transform.scale(
-                                scale: 0.85 + (0.15 * dragProgress.abs().clamp(0.0, 1.0)),
-                                child: Transform.rotate(
-                                  angle: 0.2,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: M3ExpressiveTheme.oneUiCoral,
-                                      borderRadius: BorderRadius.circular(22),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2.2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.25),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.delete_rounded, color: Colors.white, size: 24),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          strings.delete,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),

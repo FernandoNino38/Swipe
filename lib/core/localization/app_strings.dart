@@ -135,4 +135,22 @@ class AppStrings {
   String totalKeptCount(int count) => isEnglish
       ? '$count photos kept'
       : '$count fotos mantidas no histórico';
+
+  // Configurações & Sobre
+  String get settings => isEnglish ? 'Settings' : 'Configurações';
+  String get appearance => isEnglish ? 'Appearance' : 'Aparência';
+  String get language => isEnglish ? 'Language' : 'Idioma';
+  String get portuguese => 'Português (Brasil)';
+  String get english => 'English (US)';
+  String get triagePreferences => isEnglish ? 'Triage Preferences' : 'Preferências de Triagem';
+  String get aboutApp => isEnglish ? 'About Swipe' : 'Sobre o Swipe';
+  String get aiCreditsTitle => isEnglish
+      ? 'Engineered by Artificial Intelligence'
+      : 'Desenvolvido por Inteligência Artificial';
+  String get aiCreditsSubtitle => isEnglish
+      ? 'Built by Antigravity (Google DeepMind) in pair-programming with Fernando Nino.'
+      : 'Criado pelo Antigravity (Google DeepMind) em colaboração com Fernando Nino.';
+  String get sourceCode => isEnglish ? 'Source Code on GitHub' : 'Código Fonte no GitHub';
+  String get appVersion => isEnglish ? 'Version' : 'Versão';
 }
+
