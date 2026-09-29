@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/icon/app_icon.png" width="128" height="128" alt="Swipe Logo" />
+
 # 📸 Swipe
 ### Triagem Inteligente e Limpeza de Galeria de Fotos
 
