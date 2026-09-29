@@ -320,7 +320,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${strings.appVersion} 0.11.0',
+                              '${strings.appVersion} 0.11.1',
                               style: TextStyle(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w600,
