@@ -48,70 +48,94 @@ class _DeckScreenState extends State<DeckScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 96,
         titleSpacing: 16,
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Título Swipe grande com fontes padrão do sistema
+            // Linha 1: Título "Swipe" destacado e maior
             const Text(
               'Swipe',
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 32,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.6,
+                letterSpacing: -0.8,
               ),
             ),
-            const SizedBox(width: 10),
-            // Seletor de pasta ao lado do título
-            Flexible(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => AlbumSelectionSheet.show(context, controller),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
+            const SizedBox(height: 4),
+            // Linha 2: Seletor de pastas/álbuns em pílula
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => AlbumSelectionSheet.show(context, controller),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF1B1E28)
+                      : const Color(0xFFE8EBF2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
                     color: isDark
-                        ? const Color(0xFF1B1E28)
-                        : const Color(0xFFE8EBF2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF2E3545)
-                          : const Color(0xFFD6DBE7),
-                      width: 1.0,
-                    ),
+                        ? const Color(0xFF2E3545)
+                        : const Color(0xFFD6DBE7),
+                    width: 1.0,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.photo_library_rounded,
-                        size: 15,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          controller.selectedAlbum?.localizedName(strings) ?? strings.allPhotos,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.photo_library_rounded,
+                      size: 14,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 5),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 190),
+                      child: Text(
+                        controller.selectedAlbum?.localizedName(strings) ?? strings.allPhotos,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12.5,
                         ),
                       ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(Icons.keyboard_arrow_down_rounded, size: 17),
+                  ],
                 ),
               ),
             ),
           ],
         ),
         actions: [
+          // Botão de Lixeira com contador badge
+          IconButton(
+            tooltip: strings.reviewTrash,
+            icon: Badge(
+              isLabelVisible: controller.softDeleteCount > 0,
+              label: Text(
+                '${controller.softDeleteCount}',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: M3ExpressiveTheme.oneUiCoral,
+              child: const Icon(Icons.delete_outline_rounded),
+            ),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ReviewScreen(),
+                ),
+              );
+            },
+          ),
+          // Botão de Configurações
           IconButton(
             tooltip: strings.settings,
             icon: const Icon(Icons.settings_outlined),
@@ -181,7 +205,7 @@ class _DeckScreenState extends State<DeckScreen> {
                             // Card N (Card ativo no topo com animação de entrada ao Desfazer)
                             if (controller.currentItem != null)
                               TriageCard(
-                                key: ValueKey('card_${controller.currentItem!.id}_${controller.currentIndex}'),
+                                key: _topCardKey,
                                 item: controller.currentItem!,
                                 cachedBytes: controller.cache.getCachedBytes(
                                   controller.currentItem!.id,
@@ -284,10 +308,9 @@ class _DeckScreenState extends State<DeckScreen> {
                         ),
                       ),
 
-                      // Rodapé com os 5 botões de ação: Lixeira, Excluir, Desfazer, Manter, Favorito
+                      // Rodapé com os botões de ação: Excluir, Desfazer, Manter, Favorito
                       QuickActionsBar(
                         canUndo: controller.canUndo,
-                        trashCount: controller.softDeleteCount,
                         favoritesCount: controller.favoritesCount,
                         onUndo: () {
                           HapticFeedback.lightImpact();
@@ -349,14 +372,6 @@ class _DeckScreenState extends State<DeckScreen> {
                             controller.swipeRight();
                           }
                         },
-                        onOpenTrash: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ReviewScreen(),
-                            ),
-                          );
-                        },
                         onFavorite: () {
                           if (controller.currentItem != null) {
                             HapticFeedback.lightImpact();
@@ -406,7 +421,6 @@ class _DeckScreenState extends State<DeckScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 8),
                     ],
                   )
                 : _buildSessionCompletedView(context, controller, colorScheme, strings),

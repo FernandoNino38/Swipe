@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/models/triage_item.dart';
-import 'metadata_pill.dart';
 
 typedef DragProgressCallback = void Function(double progress);
 
@@ -375,6 +375,11 @@ class TriageCardState extends State<TriageCard>
 
   @override
   Widget build(BuildContext context) {
+    // Cálculo da intensidade do swipe para os selos de animação
+    final swipeP = (_dragOffset.dx / swipeThreshold).clamp(-1.5, 1.5);
+    final deleteIntensity = (-swipeP).clamp(0.0, 1.0);
+    final keepIntensity = swipeP.clamp(0.0, 1.0);
+
     return GestureDetector(
       onPanUpdate: widget.isTopCard ? _onPanUpdate : null,
       onPanEnd: widget.isTopCard ? _onPanEnd : null,
@@ -420,6 +425,106 @@ class TriageCardState extends State<TriageCard>
                       children: [
                         // Imagem da Foto (Smart Fit com ambient blur ou Fill)
                         _buildImageContent(),
+
+                        // Selo dinâmico de ação ao deslizar para a ESQUERDA (EXCLUIR / DISCARD)
+                        if (widget.isTopCard && deleteIntensity > 0.02)
+                          Positioned(
+                            top: 40,
+                            right: 28,
+                            child: Transform.rotate(
+                              angle: 0.22,
+                              child: Opacity(
+                                opacity: deleteIntensity,
+                                child: Transform.scale(
+                                  scale: 0.8 + (0.28 * deleteIntensity),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: M3ExpressiveTheme.oneUiCoral.withValues(alpha: 0.90),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: M3ExpressiveTheme.oneUiCoral.withValues(alpha: 0.45),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.delete_outline_rounded, color: Colors.white, size: 26),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'EXCLUIR',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // Selo dinâmico de ação ao deslizar para a DIREITA (MANTER / KEEP)
+                        if (widget.isTopCard && keepIntensity > 0.02)
+                          Positioned(
+                            top: 40,
+                            left: 28,
+                            child: Transform.rotate(
+                              angle: -0.22,
+                              child: Opacity(
+                                opacity: keepIntensity,
+                                child: Transform.scale(
+                                  scale: 0.8 + (0.28 * keepIntensity),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: M3ExpressiveTheme.oneUiMint.withValues(alpha: 0.90),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: M3ExpressiveTheme.oneUiMint.withValues(alpha: 0.45),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.check_rounded, color: Colors.white, size: 26),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'MANTER',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
 
                         // Botão superior de alternar proporção (Ajustar / Preencher) com indicador de proporção
                         if (widget.isTopCard && widget.onToggleFitMode != null)
@@ -482,82 +587,6 @@ class TriageCardState extends State<TriageCard>
                               ),
                             ),
                           ),
-
-                        // Degradê sutil na base para leitura dos metadados
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          height: 130,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.82),
-                                  Colors.black.withValues(alpha: 0.35),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // Overlay de Metadados e Informações do Arquivo
-                        Positioned(
-                          left: 14,
-                          right: 14,
-                          bottom: 14,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.item.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                      offset: Offset(0, 1),
-                                      blurRadius: 4,
-                                      color: Colors.black54,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 4,
-                                children: [
-                                  MetadataPill(
-                                    icon: Icons.calendar_today_rounded,
-                                    label: widget.item.formattedDate,
-                                  ),
-                                  MetadataPill(
-                                    icon: Icons.access_time_rounded,
-                                    label: widget.item.formattedTime,
-                                  ),
-                                  MetadataPill(
-                                    icon: Icons.sd_card_rounded,
-                                    label: widget.item.formattedSize,
-                                  ),
-                                  MetadataPill(
-                                    icon: Icons.aspect_ratio_rounded,
-                                    label: widget.item.ratioLabel.isNotEmpty
-                                        ? '${widget.item.formattedResolution} (${widget.item.ratioLabel})'
-                                        : widget.item.formattedResolution,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                   ),
