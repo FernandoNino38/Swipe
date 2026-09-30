@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/models/triage_item.dart';
+import 'm3_expressive_loading.dart';
 
 typedef DragProgressCallback = void Function(double progress);
 
@@ -375,6 +377,7 @@ class TriageCardState extends State<TriageCard>
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     // Cálculo da intensidade do swipe para os selos de animação
     final swipeP = (_dragOffset.dx / swipeThreshold).clamp(-1.5, 1.5);
     final deleteIntensity = (-swipeP).clamp(0.0, 1.0);
@@ -454,14 +457,14 @@ class TriageCardState extends State<TriageCard>
                                         ),
                                       ],
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.delete_outline_rounded, color: Colors.white, size: 26),
-                                        SizedBox(width: 8),
+                                        const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 26),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'EXCLUIR',
-                                          style: TextStyle(
+                                          strings.delete,
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w900,
                                             fontSize: 18,
@@ -504,14 +507,14 @@ class TriageCardState extends State<TriageCard>
                                         ),
                                       ],
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.check_rounded, color: Colors.white, size: 26),
-                                        SizedBox(width: 8),
+                                        const Icon(Icons.check_rounded, color: Colors.white, size: 26),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'MANTER',
-                                          style: TextStyle(
+                                          strings.keep,
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w900,
                                             fontSize: 18,
@@ -656,7 +659,7 @@ class TriageCardState extends State<TriageCard>
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: M3ExpressiveLoadingIndicator(size: 44),
           );
         },
         errorBuilder: (context, error, stackTrace) => Container(
@@ -677,7 +680,7 @@ class TriageCardState extends State<TriageCard>
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: M3ExpressiveLoadingIndicator(size: 44),
           );
         },
       );

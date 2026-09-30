@@ -6,6 +6,7 @@ import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
 import '../../domain/models/triage_item.dart';
 import '../widgets/album_selection_sheet.dart';
+import '../widgets/m3_expressive_loading.dart';
 import '../widgets/quick_actions_bar.dart';
 import '../widgets/triage_card.dart';
 import 'favorites_screen.dart';
@@ -67,7 +68,7 @@ class _DeckScreenState extends State<DeckScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            // Linha 2: Seletor de pastas/álbuns em pílula
+            // Linha 2: Seletor de pastas/álbuns alinhado à esquerda
             InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () => AlbumSelectionSheet.show(context, controller),
@@ -150,27 +151,12 @@ class _DeckScreenState extends State<DeckScreen> {
           ),
           const SizedBox(width: 6),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: controller.progressPercentage,
-                backgroundColor: isDark
-                    ? const Color(0xFF1E222D)
-                    : const Color(0xFFE2E6EF),
-                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                minHeight: 3,
-              ),
-            ),
-          ),
-        ),
       ),
       body: SafeArea(
         child: controller.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: M3ExpressiveLoadingIndicator(size: 58),
+              )
             : controller.hasMoreCards
                 ? Column(
                     children: [
@@ -341,16 +327,25 @@ class _DeckScreenState extends State<DeckScreen> {
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              duration: const Duration(milliseconds: 900),
+                              duration: const Duration(milliseconds: 1200),
                               behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.only(
+                                left: 24,
+                                right: 24,
+                                bottom: 100, // Elevado para não cobrir a barra inferior
+                              ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               content: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.undo_rounded, color: Colors.white, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(strings.undoRestored),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    strings.undoRestored,
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
                                 ],
                               ),
                             ),
@@ -385,16 +380,25 @@ class _DeckScreenState extends State<DeckScreen> {
                                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    duration: const Duration(milliseconds: 900),
+                                    duration: const Duration(milliseconds: 1200),
                                     behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.only(
+                                      left: 24,
+                                      right: 24,
+                                      bottom: 100, // Elevado para não cobrir a barra inferior
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     content: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const Icon(Icons.favorite_rounded, color: M3ExpressiveTheme.oneUiRose, size: 20),
-                                        const SizedBox(width: 8),
-                                        Text(strings.addedToFavorites),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          strings.addedToFavorites,
+                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                        ),
                                       ],
                                     ),
                                   ),
