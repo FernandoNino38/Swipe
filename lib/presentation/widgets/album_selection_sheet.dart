@@ -36,8 +36,8 @@ class AlbumSelectionSheet extends StatelessWidget {
     final selected = controller.selectedAlbum;
     final strings = AppStrings.of(context);
 
-    final cardBg = isDark ? const Color(0xFF161922) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF262C3A) : const Color(0xFFE5E8F0);
+    final cardBg = isDark ? colorScheme.surfaceContainerHigh : colorScheme.surfaceContainerLowest;
+    final cardBorder = isDark ? colorScheme.outlineVariant.withValues(alpha: 0.3) : colorScheme.outlineVariant.withValues(alpha: 0.5);
 
     return SafeArea(
       child: ConstrainedBox(
@@ -51,7 +51,7 @@ class AlbumSelectionSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Cabeçalho de Área de Visualização One UI 9
+              // Cabeçalho de Área de Visualização
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Text(
@@ -69,8 +69,7 @@ class AlbumSelectionSheet extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   color: cardBg,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: cardBorder, width: 1.0),
+                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
@@ -208,12 +207,11 @@ class AlbumSelectionSheet extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Grouped Card 2: Histórico de Fotos Mantidas (One UI Toggle Card)
+              // Grouped Card 2: Histórico de Fotos Mantidas
               Container(
                 decoration: BoxDecoration(
                   color: cardBg,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: cardBorder, width: 1.0),
+                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
@@ -328,8 +326,7 @@ class AlbumSelectionSheet extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   color: cardBg,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: cardBorder, width: 1.0),
+                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),

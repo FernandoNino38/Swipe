@@ -90,7 +90,16 @@ class TriageItem {
     if ((ratio - 3 / 4).abs() < 0.08) return '3:4';
     if ((ratio - 2 / 3).abs() < 0.08) return '2:3';
     if (ratio < 0.45) return 'Vertical';
-    return isLandscape ? '$width:$height' : '$width:$height';
+    return '$width:$height';
+  }
+
+  /// Retorna o caminho absoluto do arquivo no dispositivo (se disponível)
+  Future<String?> getFilePath() async {
+    if (assetEntity != null) {
+      final file = await assetEntity!.file;
+      return file?.path;
+    }
+    return mockImageUrl;
   }
 
   @override

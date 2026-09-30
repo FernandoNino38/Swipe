@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../domain/models/gallery_album.dart';
 import '../../domain/models/triage_item.dart';
@@ -205,6 +207,53 @@ class MediaService {
       return resultIds.isNotEmpty;
     } catch (e) {
       debugPrint('Erro ao executar hard delete nativo: $e');
+      return false;
+    }
+  }
+
+  static const MethodChannel _nativeChannel =
+      MethodChannel('com.antigravity.phototriage/native_actions');
+
+  /// Sincroniza a marcação de favorito com a galeria nativa do aparelho (Android MediaStore / iOS PhotoKit)
+  static Future<bool> syncFavoriteWithSystem(AssetEntity? asset, bool isFavorite) async {
+    if (asset == null) return false;
+    try {
+      // Tenta via MethodChannel Android nativo (MediaStore.MediaColumns.IS_FAVORITE)
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final result = await _nativeChannel.invokeMethod<bool>('setFavorite', {
+          'assetId': asset.id,
+          'isFavorite': isFavorite,
+        });
+        return result ?? false;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // iOS PhotoKit via PhotoManager
+        await PhotoManager.editor.darwin.favoriteAsset(
+          entity: asset,
+          favorite: isFavorite,
+        );
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Não foi possível sincronizar favorito com a galeria nativa: $e');
+    }
+    return false;
+  }
+
+  /// Abre o arquivo no gerenciador de arquivos padrão ou app visualizador do sistema
+  static Future<bool> openFileInSystemViewer(String filePath) async {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final success = await _nativeChannel.invokeMethod<bool>('openInFileManager', {
+          'filePath': filePath,
+        });
+        if (success == true) return true;
+      }
+
+      // Fallback para OpenFilex se disponível ou suportado
+      final result = await OpenFilex.open(filePath);
+      return result.type == ResultType.done;
+    } catch (e) {
+      debugPrint('Erro ao abrir arquivo externamente: $e');
       return false;
     }
   }

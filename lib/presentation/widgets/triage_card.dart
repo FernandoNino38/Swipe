@@ -77,7 +77,7 @@ class TriageCardState extends State<TriageCard>
       ).animate(
         CurvedAnimation(
           parent: _animController,
-          curve: Curves.easeOutBack,
+          curve: M3ExpressiveTheme.motionSpring,
         ),
       );
 
@@ -87,7 +87,7 @@ class TriageCardState extends State<TriageCard>
       ).animate(
         CurvedAnimation(
           parent: _animController,
-          curve: Curves.easeOutCubic,
+          curve: M3ExpressiveTheme.motionEmphasizedDecelerate,
         ),
       );
 
@@ -97,7 +97,7 @@ class TriageCardState extends State<TriageCard>
       ).animate(
         CurvedAnimation(
           parent: _animController,
-          curve: Curves.easeInQuad,
+          curve: M3ExpressiveTheme.motionEmphasizedDecelerate,
         ),
       );
 
@@ -137,7 +137,7 @@ class TriageCardState extends State<TriageCard>
         ).animate(
           CurvedAnimation(
             parent: _animController,
-            curve: Curves.easeOutBack,
+            curve: M3ExpressiveTheme.motionSpring,
           ),
         );
 
@@ -147,7 +147,7 @@ class TriageCardState extends State<TriageCard>
         ).animate(
           CurvedAnimation(
             parent: _animController,
-            curve: Curves.easeOutCubic,
+            curve: M3ExpressiveTheme.motionEmphasizedDecelerate,
           ),
         );
 
@@ -157,7 +157,7 @@ class TriageCardState extends State<TriageCard>
         ).animate(
           CurvedAnimation(
             parent: _animController,
-            curve: Curves.easeInQuad,
+            curve: M3ExpressiveTheme.motionEmphasizedDecelerate,
           ),
         );
 
@@ -348,7 +348,7 @@ class TriageCardState extends State<TriageCard>
     ).animate(
       CurvedAnimation(
         parent: _animController,
-        curve: Curves.easeOutBack, // Retorno elástico de mola M3 Expressive
+        curve: M3ExpressiveTheme.motionSpring, // Retorno elástico de mola M3 Expressive
       ),
     );
 
@@ -405,24 +405,19 @@ class TriageCardState extends State<TriageCard>
               child: Material(
                 type: MaterialType.transparency,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      width: 1.0,
-                    ),
+                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.22),
-                        blurRadius: 20,
-                        offset: const Offset(0, 6),
-                        spreadRadius: 1,
+                        color: Colors.black.withValues(alpha: 0.28),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -432,43 +427,39 @@ class TriageCardState extends State<TriageCard>
                         // Selo dinâmico de ação ao deslizar para a ESQUERDA (EXCLUIR / DISCARD)
                         if (widget.isTopCard && deleteIntensity > 0.02)
                           Positioned(
-                            top: 40,
-                            right: 28,
+                            top: 36,
+                            right: 24,
                             child: Transform.rotate(
-                              angle: 0.22,
+                              angle: 0.18,
                               child: Opacity(
                                 opacity: deleteIntensity,
                                 child: Transform.scale(
-                                  scale: 0.8 + (0.28 * deleteIntensity),
+                                  scale: 0.85 + (0.25 * deleteIntensity),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: M3ExpressiveTheme.oneUiCoral.withValues(alpha: 0.90),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2.2,
-                                      ),
+                                      color: M3ExpressiveTheme.oneUiCoral,
+                                      borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: M3ExpressiveTheme.oneUiCoral.withValues(alpha: 0.45),
-                                          blurRadius: 16,
-                                          offset: const Offset(0, 4),
+                                          color: M3ExpressiveTheme.oneUiCoral.withValues(alpha: 0.40),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 6),
                                         ),
                                       ],
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 26),
+                                        const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
                                         const SizedBox(width: 8),
                                         Text(
                                           strings.delete,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 18,
-                                            letterSpacing: 1.2,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                            letterSpacing: 0.8,
                                           ),
                                         ),
                                       ],
@@ -482,43 +473,39 @@ class TriageCardState extends State<TriageCard>
                         // Selo dinâmico de ação ao deslizar para a DIREITA (MANTER / KEEP)
                         if (widget.isTopCard && keepIntensity > 0.02)
                           Positioned(
-                            top: 40,
-                            left: 28,
+                            top: 36,
+                            left: 24,
                             child: Transform.rotate(
-                              angle: -0.22,
+                              angle: -0.18,
                               child: Opacity(
                                 opacity: keepIntensity,
                                 child: Transform.scale(
-                                  scale: 0.8 + (0.28 * keepIntensity),
+                                  scale: 0.85 + (0.25 * keepIntensity),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: M3ExpressiveTheme.oneUiMint.withValues(alpha: 0.90),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2.2,
-                                      ),
+                                      color: M3ExpressiveTheme.oneUiMint,
+                                      borderRadius: BorderRadius.circular(M3ExpressiveTheme.pillBorderRadius),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: M3ExpressiveTheme.oneUiMint.withValues(alpha: 0.45),
-                                          blurRadius: 16,
-                                          offset: const Offset(0, 4),
+                                          color: M3ExpressiveTheme.oneUiMint.withValues(alpha: 0.40),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 6),
                                         ),
                                       ],
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.check_rounded, color: Colors.white, size: 26),
+                                        const Icon(Icons.check_rounded, color: Colors.white, size: 24),
                                         const SizedBox(width: 8),
                                         Text(
                                           strings.keep,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 18,
-                                            letterSpacing: 1.2,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                            letterSpacing: 0.8,
                                           ),
                                         ),
                                       ],

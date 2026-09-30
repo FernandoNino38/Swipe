@@ -1,12 +1,14 @@
-import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../core/localization/app_strings.dart';
+import '../../core/services/media_service.dart';
 import '../../domain/models/triage_item.dart';
 
-/// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom)
-class PhotoDetailDialog extends StatelessWidget {
+/// Diálogo de visualização em alta definição com suporte a zoom gestual (Pinch to Zoom),
+/// metadados detalhados, exibição do caminho do arquivo e atalho para o gerenciador de arquivos.
+class PhotoDetailDialog extends StatefulWidget {
   final TriageItem item;
   final Uint8List? cachedBytes;
 
@@ -32,6 +34,52 @@ class PhotoDetailDialog extends StatelessWidget {
   }
 
   @override
+  State<PhotoDetailDialog> createState() => _PhotoDetailDialogState();
+}
+
+class _PhotoDetailDialogState extends State<PhotoDetailDialog> {
+  String? _filePath;
+  bool _isLoadingPath = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveFilePath();
+  }
+
+  Future<void> _resolveFilePath() async {
+    try {
+      final path = await widget.item.getFilePath();
+      if (mounted) {
+        setState(() {
+          _filePath = path;
+          _isLoadingPath = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPath = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openInFiles(BuildContext context, AppStrings strings) async {
+    if (_filePath == null || _filePath!.isEmpty) return;
+
+    final success = await MediaService.openFileInSystemViewer(_filePath!);
+    if (!success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.couldNotOpenFile),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
@@ -43,7 +91,7 @@ class PhotoDetailDialog extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          item.title,
+          widget.item.title,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -77,13 +125,13 @@ class PhotoDetailDialog extends StatelessWidget {
               minScale: 1.0,
               maxScale: 5.0,
               child: Hero(
-                tag: 'photo_${item.id}',
+                tag: 'photo_${widget.item.id}',
                 child: _buildImage(fit: BoxFit.contain),
               ),
             ),
           ),
 
-          // Painel inferior com metadados expandidos
+          // Painel inferior com metadados expandidos e localização do arquivo
           Positioned(
             left: 16,
             right: 16,
@@ -95,7 +143,7 @@ class PhotoDetailDialog extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.65),
+                    color: Colors.black.withValues(alpha: 0.72),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.18),
@@ -117,7 +165,7 @@ class PhotoDetailDialog extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            item.formattedSize,
+                            widget.item.formattedSize,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white70,
                               fontWeight: FontWeight.w600,
@@ -127,14 +175,68 @@ class PhotoDetailDialog extends StatelessWidget {
                       ),
                       const Divider(color: Colors.white24, height: 16),
                       Text(
-                        '${strings.date}: ${item.formattedDate} ${strings.atTime} ${item.formattedTime}',
+                        '${strings.date}: ${widget.item.formattedDate} ${strings.atTime} ${widget.item.formattedTime}',
                         style: const TextStyle(color: Colors.white70, fontSize: 13),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${strings.dimensions}: ${item.formattedResolution}${item.ratioLabel.isNotEmpty ? ' (${item.ratioLabel})' : ''}',
+                        '${strings.dimensions}: ${widget.item.formattedResolution}${widget.item.ratioLabel.isNotEmpty ? ' (${widget.item.ratioLabel})' : ''}',
                         style: const TextStyle(color: Colors.white70, fontSize: 13),
                       ),
+
+                      // Caminho do arquivo no armazenamento local
+                      if (_isLoadingPath)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                          ),
+                        )
+                      else if (_filePath != null && _filePath!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.folder_open_rounded, size: 16, color: Colors.white54),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _filePath!,
+                                style: const TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Botão atalho para abrir no gerenciador de arquivos
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonalIcon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white.withValues(alpha: 0.16),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            onPressed: () => _openInFiles(context, strings),
+                            icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                            label: Text(
+                              strings.showInFiles,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -147,15 +249,15 @@ class PhotoDetailDialog extends StatelessWidget {
   }
 
   Widget _buildImage({BoxFit fit = BoxFit.contain}) {
-    if (cachedBytes != null) {
+    if (widget.cachedBytes != null) {
       return Image.memory(
-        cachedBytes!,
+        widget.cachedBytes!,
         fit: fit,
       );
     }
-    if (item.assetEntity != null) {
+    if (widget.item.assetEntity != null) {
       return AssetEntityImage(
-        item.assetEntity!,
+        widget.item.assetEntity!,
         isOriginal: true,
         fit: fit,
         loadingBuilder: (context, child, progress) {
@@ -164,9 +266,9 @@ class PhotoDetailDialog extends StatelessWidget {
         },
       );
     }
-    if (item.mockImageUrl != null) {
+    if (widget.item.mockImageUrl != null) {
       return Image.network(
-        item.mockImageUrl!,
+        widget.item.mockImageUrl!,
         fit: fit,
       );
     }

@@ -18,18 +18,33 @@ class M3ExpressiveTheme {
   static const Color negativeActionColor = oneUiCoral;
   static const Color accentWarningColor = oneUiAmber;
 
-  // Raios Squircle & Superellipse
-  static const double cardBorderRadius = 34.0;
-  static const double capsuleRadius = 30.0;
+  // Raios de Formas M3 Expressive (Pill, Squircle e Rounded Containers)
+  static const double cardBorderRadius = 28.0;
+  static const double capsuleRadius = 32.0;
   static const double pillBorderRadius = 24.0;
-  static const double chipBorderRadius = 18.0;
-  static const double sheetBorderRadius = 32.0;
+  static const double chipBorderRadius = 16.0;
+  static const double sheetBorderRadius = 28.0;
 
-  // Superfícies do Swipe
-  static const Color lightScaffold = Color(0xFFF3F4F8); // Clean Light Canvas
+  // Curvas de Movimento Oficiais do Material 3 Expressive
+  // Emphasized (padrão expressivo com overshoot/deceleração orgânica)
+  static const Curve motionEmphasized = Curves.easeInOutCubicEmphasized;
+  // Emphasized Decelerate (entradas, expansões e desfechos)
+  static const Curve motionEmphasizedDecelerate = Curves.easeOutCubic;
+  // Emphasized Accelerate (saídas rápidas de tela e dispensas)
+  static const Curve motionEmphasizedAccelerate = Curves.easeInCubic;
+  // Expressive Spring Bounce (toques, press e feedbacks táteis)
+  static const Curve motionSpring = Curves.easeOutBack;
+
+  // Durações de Movimento M3 Expressive
+  static const Duration motionDurationShort = Duration(milliseconds: 150);
+  static const Duration motionDurationMedium = Duration(milliseconds: 300);
+  static const Duration motionDurationLong = Duration(milliseconds: 450);
+
+  // Superfícies do Swipe M3 Expressive
+  static const Color lightScaffold = Color(0xFFF6F8FC);
   static const Color lightCardSurface = Color(0xFFFFFFFF);
-  static const Color darkScaffold = Color(0xFF0A0C10); // Deep AMOLED Black Canvas
-  static const Color darkCardSurface = Color(0xFF161922); // Deep Charcoal Card
+  static const Color darkScaffold = Color(0xFF0F1218);
+  static const Color darkCardSurface = Color(0xFF181C26);
 
   /// Constrói o ThemeData Expressive
   static ThemeData buildTheme({
@@ -97,16 +112,12 @@ class M3ExpressiveTheme {
         ),
       ),
 
-      // Cartões Squircle
+      // Cartões M3 Expressive (Superfícies tonais sem bordas duras artificiais)
       cardTheme: CardThemeData(
         elevation: 0,
-        color: isDark ? darkCardSurface : lightCardSurface,
+        color: isDark ? colorScheme.surfaceContainerHigh : colorScheme.surfaceContainerLowest,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(cardBorderRadius),
-          side: BorderSide(
-            color: isDark ? const Color(0xFF252A36) : const Color(0xFFECEEF5),
-            width: 1,
-          ),
         ),
         clipBehavior: Clip.antiAliasWithSaveLayer,
       ),

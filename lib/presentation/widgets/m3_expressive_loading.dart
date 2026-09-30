@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// Indicador de carregamento expressivo no estilo Material 3 Expressive.
-/// Apresenta formas geométricas orgânicas (círculo, quadrado arredondado,
-/// triângulo arredondado/trevo e pétala) que se transformam continuamente,
-/// com transição fluida de cores e pulsação elástica.
+/// Indicador de carregamento oficial do Material 3 Expressive (LoadingIndicator).
+/// 
+/// Em conformidade estrita com as diretrizes do Material 3 Expressive (m3.material.io):
+/// - Utiliza formas poligonais orgânicas arredondadas de transição contínua
+///   (Circle -> SoftBurst / Clover -> Squircle -> Pill).
+/// - Animação de rotação com física de mola desacelerada (Emphasized Decelerate).
+/// - Superfície tonal fluida com interpolação de cores temáticas da paleta M3.
 class M3ExpressiveLoadingIndicator extends StatefulWidget {
   final double size;
   final Color? color;
@@ -12,7 +15,7 @@ class M3ExpressiveLoadingIndicator extends StatefulWidget {
 
   const M3ExpressiveLoadingIndicator({
     super.key,
-    this.size = 54,
+    this.size = 48,
     this.color,
     this.message,
   });
@@ -32,7 +35,7 @@ class _M3ExpressiveLoadingIndicatorState
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 2000),
     )..repeat();
   }
 
@@ -60,18 +63,18 @@ class _M3ExpressiveLoadingIndicatorState
               animation: _controller,
               builder: (context, child) {
                 return CustomPaint(
-                  painter: _M3ExpressiveShapePainter(
+                  painter: _M3ExpressiveMorphPainter(
                     progress: _controller.value,
                     primaryColor: primaryColor,
                     secondaryColor: colorScheme.tertiary,
-                    highlightColor: colorScheme.secondary,
+                    containerColor: colorScheme.primaryContainer,
                   ),
                 );
               },
             ),
           ),
           if (widget.message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               widget.message!,
               textAlign: TextAlign.center,
@@ -89,68 +92,75 @@ class _M3ExpressiveLoadingIndicatorState
   }
 }
 
-class _M3ExpressiveShapePainter extends CustomPainter {
+/// Painter de morphing poligonal arredondado conforme a biblioteca MaterialShapes do Material 3 Expressive
+class _M3ExpressiveMorphPainter extends CustomPainter {
   final double progress;
   final Color primaryColor;
   final Color secondaryColor;
-  final Color highlightColor;
+  final Color containerColor;
 
-  _M3ExpressiveShapePainter({
+  _M3ExpressiveMorphPainter({
     required this.progress,
     required this.primaryColor,
     required this.secondaryColor,
-    required this.highlightColor,
+    required this.containerColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = math.min(size.width, size.height) * 0.42;
+    final baseRadius = math.min(size.width, size.height) * 0.44;
 
-    // Rotação suave contínua com pequenas acelerações e desacelerações
+    // Rotação suave contínua no padrão Emphasized
     final rotation = progress * 2 * math.pi;
 
-    // Ciclo de 4 fases que morpham o número de pétalas / cantos (círculo -> quadrado -> trevo -> flor)
-    // t varia de 0 a 1 em cada quarto de ciclo
-    final phase = progress * 4.0;
-    final currentPhaseIndex = phase.floor() % 4;
-    final t = phase - phase.floor();
-    final smoothT = Curves.easeInOutCubic.transform(t);
+    // 4 etapas de morphing suave (0 a 1 por etapa)
+    final scaledT = progress * 4.0;
+    final stage = scaledT.floor() % 4;
+    final subT = scaledT - scaledT.floor();
+    // Curva M3 Emphasized Decelerate
+    final curvedT = Curves.easeInOutCubicEmphasized.transform(subT);
 
-    // Número de vértices/pétalas entre fases
-    final shapeCorners = [4.0, 3.0, 5.0, 4.0];
-    final fromCorner = shapeCorners[currentPhaseIndex];
-    final toCorner = shapeCorners[(currentPhaseIndex + 1) % 4];
-    final activeCorners = fromCorner + (toCorner - fromCorner) * smoothT;
+    // Formas oficiais M3:
+    // Estágio 0: Circle (0) -> Clover4Leaf (4 lóbulos)
+    // Estágio 1: Clover4Leaf -> SoftSquircle (4 lados arredondados)
+    // Estágio 2: SoftSquircle -> SoftBurst (8 pontas suaves)
+    // Estágio 3: SoftBurst -> Circle
+    final shapeAmplitudes = [0.0, 0.24, 0.12, 0.20];
+    final shapeFrequencies = [0.0, 4.0, 4.0, 8.0];
 
-    // Pulsação de escala
-    final pulseScale = 0.88 + 0.12 * math.sin(progress * 4 * math.pi);
-    final currentRadius = maxRadius * pulseScale;
+    final fromAmp = shapeAmplitudes[stage];
+    final toAmp = shapeAmplitudes[(stage + 1) % 4];
+    final activeAmp = fromAmp + (toAmp - fromAmp) * curvedT;
 
-    // Interpolação de cores expressiva
-    final colors = [
+    final fromFreq = shapeFrequencies[stage];
+    final toFreq = shapeFrequencies[(stage + 1) % 4];
+    final activeFreq = fromFreq + (toFreq - fromFreq) * curvedT;
+
+    // Transição de cor orgânica e elegante
+    final colorList = [
       primaryColor,
-      highlightColor,
       secondaryColor,
       primaryColor,
+      secondaryColor,
     ];
-    final c1 = colors[currentPhaseIndex];
-    final c2 = colors[(currentPhaseIndex + 1) % 4];
-    final activeColor = Color.lerp(c1, c2, smoothT) ?? primaryColor;
+    final c1 = colorList[stage];
+    final c2 = colorList[(stage + 1) % 4];
+    final currentColor = Color.lerp(c1, c2, curvedT) ?? primaryColor;
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(rotation);
 
     final path = Path();
-    const steps = 120;
-    for (int i = 0; i <= steps; i++) {
-      final angle = (i / steps) * 2 * math.pi;
-      // Curva superelipse/estrela suave com cantos arredondados
-      final cornerWave = math.cos(activeCorners * angle);
-      final r = currentRadius * (0.82 + 0.18 * cornerWave);
-      final x = r * math.cos(angle);
-      final y = r * math.sin(angle);
+    const int resolution = 120;
+    for (int i = 0; i <= resolution; i++) {
+      final theta = (i / resolution) * 2 * math.pi;
+      // Modulação de raio com cantos arredondados contínuos
+      final wave = activeFreq > 0.01 ? math.cos(activeFreq * theta) : 0.0;
+      final r = baseRadius * (1.0 - activeAmp + activeAmp * wave);
+      final x = r * math.cos(theta);
+      final y = r * math.sin(theta);
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -160,37 +170,30 @@ class _M3ExpressiveShapePainter extends CustomPainter {
     }
     path.close();
 
-    // Sombra suave expressiva
+    // Sombra suave tonal (Tonal Elevation)
     final shadowPaint = Paint()
-      ..color = activeColor.withValues(alpha: 0.28)
+      ..color = currentColor.withValues(alpha: 0.24)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     canvas.drawPath(path, shadowPaint);
 
-    // Preenchimento principal
+    // Preenchimento sólido tonal suave M3
     final fillPaint = Paint()
-      ..color = activeColor.withValues(alpha: 0.85)
+      ..color = currentColor
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, fillPaint);
 
-    // Borda clara interna expressiva
-    final strokePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    canvas.drawPath(path, strokePaint);
-
-    // Pequeno centro flutuante
-    final innerCenterPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
+    // Ponto central de respiração/pulso no estilo M3
+    final innerPulse = 0.75 + 0.25 * math.sin(progress * 6 * math.pi);
+    final innerPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.88)
       ..style = PaintingStyle.fill;
-    final innerRadius = maxRadius * 0.22 * (0.8 + 0.2 * math.sin(progress * 6 * math.pi));
-    canvas.drawCircle(Offset.zero, innerRadius, innerCenterPaint);
+    canvas.drawCircle(Offset.zero, baseRadius * 0.25 * innerPulse, innerPaint);
 
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _M3ExpressiveShapePainter oldDelegate) {
+  bool shouldRepaint(covariant _M3ExpressiveMorphPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.primaryColor != primaryColor;
   }

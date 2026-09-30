@@ -41,13 +41,7 @@ class FavoritesScreen extends StatelessWidget {
                     color: isDark
                         ? const Color(0xFF2E121E)
                         : const Color(0xFFFFEEF3),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF5A1C35)
-                          : const Color(0xFFFFD0DF),
-                      width: 1.0,
-                    ),
+                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                     boxShadow: [
                       BoxShadow(
                         color: M3ExpressiveTheme.oneUiRose.withValues(alpha: isDark ? 0.2 : 0.08),

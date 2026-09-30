@@ -177,6 +177,7 @@ class TriageController extends ChangeNotifier {
     _albumAssignments['favorites']?.removeWhere((e) => e.id == item.id);
     _undoStack.removeWhere((a) =>
         a.item.id == item.id && a.type == TriageActionType.moveToAlbum);
+    MediaService.syncFavoriteWithSystem(item.assetEntity, false);
     notifyListeners();
   }
 
@@ -378,6 +379,7 @@ class TriageController extends ChangeNotifier {
     );
 
     await moveToAlbum(favAlbum);
+    MediaService.syncFavoriteWithSystem(item.assetEntity, true);
   }
 
   /// Ação de Rodapé: Desfazer (Undo)
@@ -400,6 +402,9 @@ class TriageController extends ChangeNotifier {
       case TriageActionType.moveToAlbum:
         if (lastAction.targetAlbum != null) {
           _albumAssignments[lastAction.targetAlbum!.id]?.remove(lastAction.item);
+          if (lastAction.targetAlbum!.id == 'favorites') {
+            MediaService.syncFavoriteWithSystem(lastAction.item.assetEntity, false);
+          }
         }
         break;
     }

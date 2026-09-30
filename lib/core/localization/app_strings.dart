@@ -202,4 +202,14 @@ class AppStrings {
   String get viewOnGitHub => isEnglish ? 'View on GitHub' : 'Ver no GitHub';
   String get viewLicense => isEnglish ? 'View License' : 'Ver Licença';
   String get openSourceLicenses => isEnglish ? 'Open Source Licenses' : 'Licenças Open Source';
+
+  // Guia de Favoritos & Detalhes de Arquivo
+  String get firstFavoriteGuideTitle => isEnglish ? 'Favorites Shortcut' : 'Dica de Favoritos';
+  String get firstFavoriteGuideDesc => isEnglish
+      ? 'Press and hold the heart icon anytime to open your list of favorite photos.'
+      : 'Pressione e segure o ícone de coração a qualquer momento para abrir sua lista de favoritos.';
+  String get firstFavoriteGuideGotIt => isEnglish ? 'Got it!' : 'Entendi!';
+  String get fileLocation => isEnglish ? 'File Location' : 'Local do Arquivo';
+  String get showInFiles => isEnglish ? 'Show in Files' : 'Mostrar no Gerenciador';
+  String get couldNotOpenFile => isEnglish ? 'Could not open file manager.' : 'Não foi possível abrir o gerenciador de arquivos.';
 }

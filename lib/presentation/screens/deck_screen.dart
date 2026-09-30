@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/app_strings.dart';
+import '../../core/services/triage_history_service.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 import '../../domain/controllers/triage_controller.dart';
 import '../../domain/models/triage_item.dart';
@@ -73,18 +74,12 @@ class _DeckScreenState extends State<DeckScreen> {
               borderRadius: BorderRadius.circular(20),
               onTap: () => AlbumSelectionSheet.show(context, controller),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF1B1E28)
-                      : const Color(0xFFE8EBF2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF2E3545)
-                        : const Color(0xFFD6DBE7),
-                    width: 1.0,
-                  ),
+                      ? colorScheme.surfaceContainerHigh
+                      : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(M3ExpressiveTheme.chipBorderRadius),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -367,55 +362,7 @@ class _DeckScreenState extends State<DeckScreen> {
                             controller.swipeRight();
                           }
                         },
-                        onFavorite: () {
-                          if (controller.currentItem != null) {
-                            HapticFeedback.lightImpact();
-                            if (_topCardKey.currentState != null) {
-                              _topCardKey.currentState!.animateFavorite(() {
-                                setState(() {
-                                  _dragProgress = 0.0;
-                                  _undoEntranceOffset = null;
-                                });
-                                controller.favoriteCurrentPhoto();
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    duration: const Duration(milliseconds: 1200),
-                                    behavior: SnackBarBehavior.floating,
-                                    margin: const EdgeInsets.only(
-                                      left: 24,
-                                      right: 24,
-                                      bottom: 100, // Elevado para não cobrir a barra inferior
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    content: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.favorite_rounded, color: M3ExpressiveTheme.oneUiRose, size: 20),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          strings.addedToFavorites,
-                                          style: const TextStyle(fontWeight: FontWeight.w600),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              });
-                            } else {
-                              controller.favoriteCurrentPhoto();
-                            }
-                          } else {
-                            HapticFeedback.selectionClick();
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const FavoritesScreen(),
-                              ),
-                            );
-                          }
-                        },
+                        onFavorite: () => _handleFavorite(controller, strings),
                         onOpenFavorites: () {
                           HapticFeedback.selectionClick();
                           Navigator.of(context).push(
@@ -818,5 +765,151 @@ class _DeckScreenState extends State<DeckScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleFavorite(
+    TriageController controller,
+    AppStrings strings,
+  ) async {
+    if (controller.currentItem == null) {
+      HapticFeedback.selectionClick();
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const FavoritesScreen(),
+        ),
+      );
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+
+    // Verifica se é a primeira vez que o usuário favorita uma foto
+    final hasSeenGuide = await TriageHistoryService.hasSeenFavoriteGuide();
+    if (!mounted) return;
+
+    if (!hasSeenGuide) {
+      await TriageHistoryService.setSeenFavoriteGuide(true);
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (ctx) {
+          final sheetTheme = Theme.of(ctx);
+          final sheetColors = sheetTheme.colorScheme;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            decoration: BoxDecoration(
+              color: sheetColors.surfaceContainerHigh,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: sheetColors.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: M3ExpressiveTheme.oneUiRose.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.favorite_rounded,
+                      size: 42,
+                      color: M3ExpressiveTheme.oneUiRose,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    strings.firstFavoriteGuideTitle,
+                    style: sheetTheme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    strings.firstFavoriteGuideDesc,
+                    style: sheetTheme.textTheme.bodyMedium?.copyWith(
+                      color: sheetColors.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(
+                        strings.firstFavoriteGuideGotIt,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    if (!mounted) return;
+
+    if (_topCardKey.currentState != null) {
+      _topCardKey.currentState!.animateFavorite(() {
+        if (!mounted) return;
+        setState(() {
+          _dragProgress = 0.0;
+          _undoEntranceOffset = null;
+        });
+        controller.favoriteCurrentPhoto();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(milliseconds: 1200),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              bottom: 100,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.favorite_rounded, color: M3ExpressiveTheme.oneUiRose, size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  strings.addedToFavorites,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        );
+      });
+    } else {
+      controller.favoriteCurrentPhoto();
+    }
   }
 }

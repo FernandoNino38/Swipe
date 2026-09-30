@@ -40,13 +40,7 @@ class ReviewScreen extends StatelessWidget {
                     color: isDark
                         ? const Color(0xFF321316)
                         : const Color(0xFFFFECEE),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF5A1E24)
-                          : const Color(0xFFFFD0D6),
-                      width: 1.0,
-                    ),
+                    borderRadius: BorderRadius.circular(M3ExpressiveTheme.cardBorderRadius),
                     boxShadow: [
                       BoxShadow(
                         color: M3ExpressiveTheme.oneUiCoral.withValues(alpha: isDark ? 0.2 : 0.08),

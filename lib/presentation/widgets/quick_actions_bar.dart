@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/theme/m3_expressive_theme.dart';
 
-/// Barra de navegação e ações inferior redesenhada no padrão Material 3 Expressive:
-/// - Ocupa a largura total da base da tela (não é mais uma pílula flutuante isolada).
-/// - 4 ações principais: Excluir (lixeira destacada), Desfazer (com histórico), Manter (sucesso) e Favorito (com badge).
-/// - Todas as interações possuem curvas de bouncing expressivas (Curves.easeOutBack / Curves.easeInOutCubic).
+/// Barra de ações inferior inspirada no Floating Toolbar & Action Bar do Material 3 Expressive:
+/// - Base tonal sem bordas artificiais, utilizando elevação tonal e superfícies responsivas.
+/// - 4 ações táteis com feedback de bouncing por molas (Curves.easeInOutCubicEmphasized / Curves.easeOutBack).
+/// - Contêineres tonais e semânticos (ErrorContainer para lixeira, SurfaceContainer para desfazer, Primary/Mint para manter, Rose para favorito).
 class QuickActionsBar extends StatelessWidget {
   final bool canUndo;
   final int favoritesCount;
@@ -38,47 +38,34 @@ class QuickActionsBar extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF11141C).withValues(alpha: 0.94)
-            : Colors.white.withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
-            width: 1.0,
-          ),
-        ),
+            ? colorScheme.surfaceContainer.withValues(alpha: 0.92)
+            : colorScheme.surfaceContainerLowest.withValues(alpha: 0.94),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, -4),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -6),
           ),
         ],
       ),
       child: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // 1. BOTÃO EXCLUIR (Ícone de Lixeira com tema Coral)
-                _M3ExpressiveButton(
+                // 1. AÇÃO EXCLUIR (Lixeira em container tonal com cor de erro)
+                _M3ExpressiveActionButton(
                   tooltip: strings.deleteTooltip,
                   onTap: onSwipeLeft,
-                  width: 58,
-                  height: 54,
+                  width: 60,
+                  height: 56,
+                  borderRadius: 22,
                   backgroundColor: isDark
                       ? const Color(0xFF381518)
                       : const Color(0xFFFFE8E8),
-                  borderColor: isDark
-                      ? const Color(0xFF5A2227)
-                      : const Color(0xFFFFD0D0),
-                  shadowColor: M3ExpressiveTheme.oneUiCoral.withValues(
-                    alpha: isDark ? 0.30 : 0.18,
-                  ),
                   child: Icon(
                     Icons.delete_outline_rounded,
                     size: 26,
@@ -88,55 +75,35 @@ class QuickActionsBar extends StatelessWidget {
                   ),
                 ),
 
-                // 2. BOTÃO DESFAZER (Central com feedback tátil)
-                _M3ExpressiveButton(
+                // 2. AÇÃO DESFAZER (Container tonal com suporte a histórico)
+                _M3ExpressiveActionButton(
                   tooltip: strings.undo,
                   onTap: canUndo ? onUndo : null,
-                  width: 54,
-                  height: 54,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 22,
                   backgroundColor: canUndo
-                      ? (isDark
-                          ? const Color(0xFF102A4A)
-                          : const Color(0xFFE5F1FF))
-                      : (isDark
-                          ? const Color(0xFF181B24)
-                          : const Color(0xFFEFF1F6)),
-                  borderColor: canUndo
-                      ? (isDark
-                          ? const Color(0xFF1E4B82)
-                          : const Color(0xFFCCE4FF))
-                      : Colors.transparent,
-                  shadowColor: canUndo
-                      ? M3ExpressiveTheme.oneUiBlue.withValues(
-                          alpha: isDark ? 0.28 : 0.16,
-                        )
-                      : null,
+                      ? (isDark ? colorScheme.primaryContainer : const Color(0xFFE5F1FF))
+                      : (isDark ? colorScheme.surfaceContainerHigh : colorScheme.surfaceContainerHighest),
                   child: Icon(
                     Icons.undo_rounded,
                     size: 24,
                     color: canUndo
-                        ? (isDark
-                            ? const Color(0xFF70B1FF)
-                            : M3ExpressiveTheme.oneUiBlue)
-                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+                        ? (isDark ? colorScheme.onPrimaryContainer : M3ExpressiveTheme.oneUiBlue)
+                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.38),
                   ),
                 ),
 
-                // 3. BOTÃO MANTER (Ícone de Checkmark com tema Emerald Mint)
-                _M3ExpressiveButton(
+                // 3. AÇÃO MANTER (Checkmark em container tonal esmeralda)
+                _M3ExpressiveActionButton(
                   tooltip: strings.keepTooltip,
                   onTap: onSwipeRight,
-                  width: 58,
-                  height: 54,
+                  width: 60,
+                  height: 56,
+                  borderRadius: 22,
                   backgroundColor: isDark
                       ? const Color(0xFF102E21)
                       : const Color(0xFFE7F9F0),
-                  borderColor: isDark
-                      ? const Color(0xFF1B4E38)
-                      : const Color(0xFFC4F2DB),
-                  shadowColor: M3ExpressiveTheme.oneUiMint.withValues(
-                    alpha: isDark ? 0.30 : 0.18,
-                  ),
                   child: Icon(
                     Icons.check_rounded,
                     size: 28,
@@ -146,22 +113,17 @@ class QuickActionsBar extends StatelessWidget {
                   ),
                 ),
 
-                // 4. BOTÃO FAVORITO (Com Badge e Toque Longo)
-                _M3ExpressiveButton(
+                // 4. AÇÃO FAVORITO (Coração em container tonal rose com badge)
+                _M3ExpressiveActionButton(
                   tooltip: strings.favoriteTooltip,
                   onTap: onFavorite,
                   onLongPress: onOpenFavorites,
-                  width: 54,
-                  height: 54,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 22,
                   backgroundColor: isDark
                       ? const Color(0xFF2E1520)
                       : const Color(0xFFFFEBF2),
-                  borderColor: isDark
-                      ? const Color(0xFF501E30)
-                      : const Color(0xFFFFCCD9),
-                  shadowColor: M3ExpressiveTheme.oneUiRose.withValues(
-                    alpha: isDark ? 0.28 : 0.16,
-                  ),
                   child: Badge(
                     isLabelVisible: favoritesCount > 0,
                     label: Text(
@@ -188,53 +150,61 @@ class QuickActionsBar extends StatelessWidget {
   }
 }
 
-/// Botão com animação elástica e física de bouncing no padrão Material 3 Expressive
-class _M3ExpressiveButton extends StatefulWidget {
+/// Botão de ação M3 Expressive com feedback háptico e animação de compressão por mola
+class _M3ExpressiveActionButton extends StatefulWidget {
   final Widget child;
   final String? tooltip;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final double width;
   final double height;
+  final double borderRadius;
   final Color backgroundColor;
-  final Color borderColor;
-  final Color? shadowColor;
 
-  const _M3ExpressiveButton({
+  const _M3ExpressiveActionButton({
     required this.child,
     this.tooltip,
     this.onTap,
     this.onLongPress,
     required this.width,
     required this.height,
+    required this.borderRadius,
     required this.backgroundColor,
-    required this.borderColor,
-    this.shadowColor,
   });
 
   @override
-  State<_M3ExpressiveButton> createState() => _M3ExpressiveButtonState();
+  State<_M3ExpressiveActionButton> createState() => _M3ExpressiveActionButtonState();
 }
 
-class _M3ExpressiveButtonState extends State<_M3ExpressiveButton>
+class _M3ExpressiveActionButtonState extends State<_M3ExpressiveActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _shapeAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
-      reverseDuration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 140),
+      reverseDuration: const Duration(milliseconds: 260),
     );
-    // Curva M3 Expressive com retorno elástico de mola (easeOutBack)
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.86).animate(
+
+    // Compressão e retorno elástico com overshoot expressivo
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.88).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeInOutCubic,
         reverseCurve: Curves.easeOutBack,
+      ),
+    );
+
+    // Morphing sutil de raio no toque (Expressive shape morph)
+    _shapeAnimation = Tween<double>(begin: widget.borderRadius, end: widget.borderRadius + 6).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOutCubic,
       ),
     );
   }
@@ -263,30 +233,22 @@ class _M3ExpressiveButtonState extends State<_M3ExpressiveButton>
               widget.onLongPress!();
             }
           : null,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: widget.backgroundColor,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: widget.borderColor,
-              width: 1.0,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              width: widget.width,
+              height: widget.height,
+              decoration: BoxDecoration(
+                color: widget.backgroundColor,
+                borderRadius: BorderRadius.circular(_shapeAnimation.value),
+              ),
+              child: Center(child: widget.child),
             ),
-            boxShadow: widget.shadowColor != null
-                ? [
-                    BoxShadow(
-                      color: widget.shadowColor!,
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(child: widget.child),
-        ),
+          );
+        },
       ),
     );
 

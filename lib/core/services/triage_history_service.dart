@@ -95,4 +95,25 @@ class TriageHistoryService {
       await prefs.setBool(_imageFitModeKey, isFit);
     } catch (_) {}
   }
+
+  static const String _favoriteGuideKey = 'swipe_has_seen_favorite_guide';
+
+  /// Verifica se o usuário já visualizou o guia explicativo do botão de favoritos
+  static Future<bool> hasSeenFavoriteGuide() async {
+    try {
+      final prefs = await _getPrefs();
+      return prefs.getBool(_favoriteGuideKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Salva que o usuário já viu o guia de favoritos
+  static Future<void> setSeenFavoriteGuide(bool seen) async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setBool(_favoriteGuideKey, seen);
+    } catch (_) {}
+  }
 }
+
