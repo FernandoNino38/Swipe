@@ -4,7 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDialog
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -40,6 +41,7 @@ fun ReviewScreen(
     val uiState by viewModel.uiState.collectAsState()
     val queue = uiState.softDeleteQueue
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var selectedCarouselIndex by remember { mutableStateOf<Int?>(null) }
     var selectedItemForDetail by remember { mutableStateOf<TriageItem?>(null) }
 
     Scaffold(
@@ -170,10 +172,10 @@ fun ReviewScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    items(queue, key = { it.id }) { item ->
+                    itemsIndexed(queue, key = { index, item -> "${item.id}_$index" }) { index, item ->
                         TrashGridItem(
                             item = item,
-                            onClick = { selectedItemForDetail = item },
+                            onClick = { selectedCarouselIndex = index },
                             onRestore = { viewModel.removeFromTrash(item) }
                         )
                     }
@@ -209,7 +211,19 @@ fun ReviewScreen(
         )
     }
 
-    // Detail dialog showing path and "Show in Files" shortcut
+    // Material 3 Carousel triggered by tapping an item in trash
+    selectedCarouselIndex?.let { index ->
+        M3PhotoCarouselDialog(
+            items = queue,
+            initialIndex = index,
+            removeActionLabel = "Restore from Trash",
+            onRemoveItem = { item -> viewModel.removeFromTrash(item) },
+            onDismiss = { selectedCarouselIndex = null },
+            onOpenInGallery = { path -> viewModel.openInFileManager(path) }
+        )
+    }
+
+    // Detail dialog showing path and "Show on Gallery" shortcut
     selectedItemForDetail?.let { item ->
         PhotoDetailModalDialog(
             item = item,

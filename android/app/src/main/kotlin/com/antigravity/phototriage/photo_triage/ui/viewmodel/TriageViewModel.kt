@@ -188,7 +188,7 @@ class TriageViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.update {
             it.copy(
                 currentIndex = it.currentIndex + 1,
-                softDeleteQueue = it.softDeleteQueue + current,
+                softDeleteQueue = it.softDeleteQueue.filterNot { item -> item.id == current.id } + current,
                 canUndo = undoStack.isNotEmpty()
             )
         }
