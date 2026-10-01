@@ -298,12 +298,14 @@ fun TriageCard(
                 if (isTopCard && deleteIntensity > 0.05f) {
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .width(80.dp)
-                            .align(Alignment.CenterEnd)
+                            .fillMaxSize()
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(Color.Transparent, CoralRed.copy(alpha = 0.45f * deleteIntensity))
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        CoralRed.copy(alpha = 0.15f * deleteIntensity),
+                                        CoralRed.copy(alpha = 0.55f * deleteIntensity)
+                                    )
                                 )
                             )
                     )
@@ -313,12 +315,14 @@ fun TriageCard(
                 if (isTopCard && keepIntensity > 0.05f) {
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .width(80.dp)
-                            .align(Alignment.CenterStart)
+                            .fillMaxSize()
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(EmeraldMint.copy(alpha = 0.45f * keepIntensity), Color.Transparent)
+                                    colors = listOf(
+                                        EmeraldMint.copy(alpha = 0.55f * keepIntensity),
+                                        EmeraldMint.copy(alpha = 0.15f * keepIntensity),
+                                        Color.Transparent
+                                    )
                                 )
                             )
                     )

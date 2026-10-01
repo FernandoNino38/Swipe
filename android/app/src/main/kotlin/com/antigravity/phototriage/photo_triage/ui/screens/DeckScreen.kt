@@ -106,12 +106,20 @@ fun DeckScreen(
                 },
                 actions = {
                     // Trash Review action with Badge
-                    IconButton(onClick = onNavigateToTrash) {
+                    FilledTonalIconButton(
+                        onClick = onNavigateToTrash,
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    ) {
                         BadgedBox(
                             badge = {
                                 if (uiState.softDeleteQueue.isNotEmpty()) {
-                                    Badge(containerColor = CoralRed) {
-                                        Text("${uiState.softDeleteQueue.size}")
+                                    Badge(
+                                        containerColor = CoralRed,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text("${uiState.softDeleteQueue.size}", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                                     }
                                 }
                             }
@@ -120,8 +128,15 @@ fun DeckScreen(
                         }
                     }
 
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     // Settings action
-                    IconButton(onClick = onNavigateToSettings) {
+                    FilledTonalIconButton(
+                        onClick = onNavigateToSettings,
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    ) {
                         Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                     }
                 },

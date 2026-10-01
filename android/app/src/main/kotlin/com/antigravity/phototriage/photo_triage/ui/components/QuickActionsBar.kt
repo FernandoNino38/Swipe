@@ -50,21 +50,32 @@ fun QuickActionsBar(
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(20.dp, RoundedCornerShape(topStart = SheetCornerRadius, topEnd = SheetCornerRadius)),
-        color = colorScheme.surfaceContainer.copy(alpha = 0.96f),
-        shape = RoundedCornerShape(topStart = SheetCornerRadius, topEnd = SheetCornerRadius)
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .shadow(
+                    elevation = 16.dp,
+                    shape = RoundedCornerShape(SheetCornerRadius),
+                    spotColor = colorScheme.primary.copy(alpha = 0.25f)
+                ),
+            color = colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
+            shape = RoundedCornerShape(SheetCornerRadius),
+            tonalElevation = 6.dp
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             // Delete (Coral / Red)
             ExpressiveActionButton(
                 icon = Icons.Rounded.DeleteOutline,
@@ -121,6 +132,7 @@ fun QuickActionsBar(
             }
         }
     }
+}
 }
 
 @OptIn(ExperimentalFoundationApi::class)
