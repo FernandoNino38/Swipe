@@ -1,90 +1,165 @@
 package com.antigravity.phototriage.photo_triage
 
-import android.content.ContentUris
-import android.content.ContentValues
-import android.content.Intent
-import android.net.Uri
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
-import android.provider.MediaStore
-import androidx.core.content.FileProvider
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodChannel
-import java.io.File
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.antigravity.phototriage.photo_triage.ui.screens.DeckScreen
+import com.antigravity.phototriage.photo_triage.ui.screens.FavoritesScreen
+import com.antigravity.phototriage.photo_triage.ui.screens.ReviewScreen
+import com.antigravity.phototriage.photo_triage.ui.screens.SettingsScreen
+import com.antigravity.phototriage.photo_triage.ui.theme.SwipeTheme
+import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
 
-class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.antigravity.phototriage/native_actions"
+class MainActivity : ComponentActivity() {
 
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
+    private val viewModel: TriageViewModel by viewModels()
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "setFavorite" -> {
-                    val assetId = call.argument<String>("assetId")
-                    val isFavorite = call.argument<Boolean>("isFavorite") ?: true
-                    if (assetId == null) {
-                        result.error("INVALID_ARGUMENT", "assetId is required", null)
-                        return@setMethodCallHandler
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        setContent {
+            val uiState by viewModel.uiState.collectAsState()
+
+            SwipeTheme(themeMode = uiState.themeMode) {
+                var hasPermission by remember { mutableStateOf(checkMediaPermission()) }
+
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestMultiplePermissions()
+                ) { permissions ->
+                    hasPermission = permissions.values.any { it }
+                    if (hasPermission) {
+                        viewModel.loadInitialData()
                     }
+                }
 
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            val idLong = assetId.toLongOrNull()
-                            if (idLong != null) {
-                                val contentUri = ContentUris.withAppendedId(
-                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                    idLong
+                if (!hasPermission) {
+                    PermissionRequestScreen(
+                        onRequestPermission = {
+                            val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                arrayOf(
+                                    Manifest.permission.READ_MEDIA_IMAGES,
+                                    Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
                                 )
-                                val values = ContentValues().apply {
-                                    put(MediaStore.MediaColumns.IS_FAVORITE, if (isFavorite) 1 else 0)
-                                }
-                                val updated = contentResolver.update(contentUri, values, null, null)
-                                result.success(updated > 0)
-                                return@setMethodCallHandler
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+                            } else {
+                                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
                             }
+                            permissionLauncher.launch(permissionsToRequest)
                         }
-                        result.success(false)
-                    } catch (e: Exception) {
-                        // On Android 11+, modifying IS_FAVORITE might throw RecoverableSecurityException if not owned
-                        result.success(false)
+                    )
+                } else {
+                    val navController = rememberNavController()
+
+                    NavHost(
+                        navController = navController,
+                        startDestination = "deck"
+                    ) {
+                        composable("deck") {
+                            DeckScreen(
+                                viewModel = viewModel,
+                                onNavigateToTrash = { navController.navigate("review") },
+                                onNavigateToSettings = { navController.navigate("settings") },
+                                onNavigateToFavorites = { navController.navigate("favorites") },
+                                onNavigateToKept = { navController.navigate("kept") }
+                            )
+                        }
+                        composable("review") {
+                            ReviewScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("favorites") {
+                            FavoritesScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("kept") {
+                            com.antigravity.phototriage.photo_triage.ui.screens.KeptPhotosScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("settings") {
+                            SettingsScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
                     }
                 }
-                "openInFileManager" -> {
-                    val filePath = call.argument<String>("filePath")
-                    if (filePath == null) {
-                        result.error("INVALID_ARGUMENT", "filePath is required", null)
-                        return@setMethodCallHandler
-                    }
+            }
+        }
+    }
 
-                    try {
-                        val file = File(filePath)
-                        if (!file.exists()) {
-                            result.error("FILE_NOT_FOUND", "File does not exist", null)
-                            return@setMethodCallHandler
-                        }
+    private fun checkMediaPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+}
 
-                        val parentDir = file.parentFile ?: file
-                        val uri = FileProvider.getUriForFile(
-                            this,
-                            "${applicationContext.packageName}.fileprovider",
-                            file
-                        )
-
-                        // Try Intent to view the file or directory
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, "image/*")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-
-                        startActivity(Intent.createChooser(intent, "Open in..."))
-                        result.success(true)
-                    } catch (e: Exception) {
-                        result.error("ERROR", e.localizedMessage, null)
-                    }
+@Composable
+fun PermissionRequestScreen(onRequestPermission: () -> Unit) {
+    Scaffold { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Permission Required",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Swipe needs photo access to help you triage and organize your gallery.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(onClick = onRequestPermission) {
+                    Text("Grant Permission")
                 }
-                else -> result.notImplemented()
             }
         }
     }
