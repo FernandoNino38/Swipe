@@ -70,7 +70,7 @@ fun TriageCard(
     val swipeThreshold = 260f
     val currentDx = offsetX.value
     // Smooth dynamic rotation with soft angle limit
-    val rotationAngle = (currentDx / 24f).coerceIn(-15f, 15f)
+    val rotationAngle = (currentDx / 15f).coerceIn(-20f, 20f)
 
     // Left swipe = negative Dx = Delete action
     val deleteIntensity = ((-currentDx) / swipeThreshold).coerceIn(0f, 1f)

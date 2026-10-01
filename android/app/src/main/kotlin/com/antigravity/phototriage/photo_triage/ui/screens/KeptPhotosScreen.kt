@@ -197,12 +197,12 @@ fun KeptPhotosScreen(
                 // Expressive Grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 48.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    itemsIndexed(keptList, key = { index, item -> "${item.id}_$index" }) { index, item ->
+                    itemsIndexed(keptList, key = { _, item -> item.id }) { index, item ->
                         KeptGridItem(
                             item = item,
                             onClick = { selectedCarouselIndex = index },

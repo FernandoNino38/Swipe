@@ -278,11 +278,16 @@ class TriageViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun permanentlyDeleteTrash() {
+    suspend fun requestDeleteIntent(): android.content.IntentSender? {
+        val queue = _uiState.value.softDeleteQueue
+        if (queue.isEmpty()) return null
+        return repository.deleteMediaBatch(queue.map { it.contentUri })
+    }
+
+    fun confirmDeletion() {
         val queue = _uiState.value.softDeleteQueue
         viewModelScope.launch {
             preferences.markDeletedBatch(queue.map { it.id })
-            repository.deletePhotos(queue)
             _uiState.update { it.copy(softDeleteQueue = emptyList()) }
             reloadPhotos()
         }

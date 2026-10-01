@@ -90,7 +90,7 @@ enum class AppThemeMode {
 @Composable
 fun SwipeTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    dynamicColor: Boolean = false, // Keep false to ensure bold, punchy M3 Expressive signature colors
+    dynamicColor: Boolean = true, // Enabled dynamic colors to embrace Material You
     content: @Composable () -> Unit
 ) {
     val isDark = when (themeMode) {

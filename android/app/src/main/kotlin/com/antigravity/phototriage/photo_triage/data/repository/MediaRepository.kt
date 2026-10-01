@@ -263,34 +263,20 @@ class MediaRepository(private val context: Context) {
         false
     }
 
-    suspend fun deletePhotos(items: List<TriageItem>): Boolean = withContext(Dispatchers.IO) {
-        if (items.isEmpty()) return@withContext true
-        var allSuccess = true
-        for (item in items) {
+    suspend fun deleteMediaBatch(uris: List<Uri>): android.content.IntentSender? = withContext(Dispatchers.IO) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return@withContext MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
+        }
+        
+        // Fallback genérico para Android 10 e anteriores
+        for (uri in uris) {
             try {
-                // First attempt ContentResolver delete
-                val rows = context.contentResolver.delete(item.contentUri, null, null)
-                if (rows <= 0 && !item.filePath.isNullOrEmpty()) {
-                    val file = File(item.filePath)
-                    if (file.exists()) {
-                        file.delete()
-                    }
-                }
-            } catch (secEx: SecurityException) {
-                // On scoped storage (Android 10+), if recoverable, delete using MediaStore query or try file delete
-                try {
-                    if (!item.filePath.isNullOrEmpty()) {
-                        val file = File(item.filePath)
-                        if (file.exists()) file.delete()
-                    }
-                } catch (_: Exception) {
-                    allSuccess = false
-                }
-            } catch (_: Exception) {
-                allSuccess = false
+                context.contentResolver.delete(uri, null, null)
+            } catch (e: Exception) {
+                // Em Q (10) isso pode lançar RecoverableSecurityException
             }
         }
-        allSuccess
+        null
     }
 
     fun openInFileManager(filePath: String): Boolean {

@@ -1,8 +1,6 @@
 package com.antigravity.phototriage.photo_triage.domain.model
 
 import android.net.Uri
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 data class TriageItem(
@@ -30,14 +28,20 @@ data class TriageItem(
 
     val formattedDate: String
         get() {
-            val sdf = SimpleDateFormat("d MMM, yyyy", Locale.getDefault())
-            return sdf.format(Date(createTimestampMs))
+            val instant = java.time.Instant.ofEpochMilli(createTimestampMs)
+            val zoneId = java.time.ZoneId.of("America/Sao_Paulo")
+            val zonedDateTime = java.time.ZonedDateTime.ofInstant(instant, zoneId)
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy", java.util.Locale("pt", "BR"))
+            return zonedDateTime.format(formatter)
         }
 
     val formattedTime: String
         get() {
-            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-            return sdf.format(Date(createTimestampMs))
+            val instant = java.time.Instant.ofEpochMilli(createTimestampMs)
+            val zoneId = java.time.ZoneId.of("America/Sao_Paulo")
+            val zonedDateTime = java.time.ZonedDateTime.ofInstant(instant, zoneId)
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm", java.util.Locale("pt", "BR"))
+            return zonedDateTime.format(formatter)
         }
 
     val formattedResolution: String

@@ -12,6 +12,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.IntentSenderRequest
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.RestoreFromTrash
@@ -38,6 +41,7 @@ import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
 import com.antigravity.phototriage.photo_triage.ui.theme.EmeraldMint
 import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +55,16 @@ fun ReviewScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedCarouselIndex by remember { mutableStateOf<Int?>(null) }
     var selectedItemForDetail by remember { mutableStateOf<TriageItem?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val deleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.confirmDeletion()
+            onBack()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -89,44 +103,28 @@ fun ReviewScreen(
                 )
             )
         },
-        bottomBar = {
+        floatingActionButton = {
             if (queue.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 16.dp
+                ExtendedFloatingActionButton(
+                    onClick = { showConfirmDialog = true },
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    shape = RoundedCornerShape(28.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
+                    modifier = Modifier.padding(bottom = 16.dp, end = 8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(horizontal = 20.dp, vertical = 14.dp)
-                    ) {
-                        Button(
-                            onClick = { showConfirmDialog = true },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = CoralRed,
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(PillCornerRadius),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                        ) {
-                            Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Permanently Delete (${uiState.formattedReclaimableStorage})",
-                                fontWeight = FontWeight.Black,
-                                fontSize = 16.sp,
-                                letterSpacing = (-0.3).sp
-                            )
-                        }
-                    }
+                    Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(26.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Delete All (${uiState.formattedReclaimableStorage})",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 16.sp,
+                        letterSpacing = (-0.3).sp
+                    )
                 }
             }
-        }
+        },
+        floatingActionButtonPosition = FabPosition.Center
     ) { innerPadding ->
         if (queue.isEmpty()) {
             Box(
@@ -236,12 +234,12 @@ fun ReviewScreen(
                 // Expressive Grid of items in trash
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 100.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    itemsIndexed(queue, key = { index, item -> "${item.id}_$index" }) { index, item ->
+                    itemsIndexed(queue, key = { _, item -> item.id }) { index, item ->
                         TrashGridItem(
                             item = item,
                             onClick = { selectedCarouselIndex = index },
@@ -280,8 +278,18 @@ fun ReviewScreen(
                 Button(
                     onClick = {
                         showConfirmDialog = false
-                        viewModel.permanentlyDeleteTrash()
-                        onBack()
+                        coroutineScope.launch {
+                            val intentSender = viewModel.requestDeleteIntent()
+                            if (intentSender != null) {
+                                deleteLauncher.launch(
+                                    IntentSenderRequest.Builder(intentSender).build()
+                                )
+                            } else {
+                                // Fallback para versões antigas que já deletaram via Resolver
+                                viewModel.confirmDeletion()
+                                onBack()
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = CoralRed)
                 ) {
