@@ -1,11 +1,14 @@
 package com.antigravity.phototriage.photo_triage.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDialog
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -17,14 +20,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.phototriage.photo_triage.domain.model.TriageItem
+import com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDialog
 import com.antigravity.phototriage.photo_triage.ui.theme.CardCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
 import com.antigravity.phototriage.photo_triage.ui.theme.EmeraldMint
@@ -48,16 +56,31 @@ fun ReviewScreen(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(
-                        "Trash Review",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                            letterSpacing = (-0.8).sp
+                    Column {
+                        Text(
+                            "Trash Review",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-1.0).sp
+                            )
                         )
-                    )
+                        Text(
+                            "${queue.size} items queued for cleanup",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 },
                 navigationIcon = {
-                    FilledTonalIconButton(onClick = onBack) {
+                    FilledTonalIconButton(
+                        onClick = onBack,
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -70,24 +93,34 @@ fun ReviewScreen(
             if (queue.isNotEmpty()) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 16.dp
                 ) {
-                    PaddingValues(16.dp).let {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 20.dp, vertical = 14.dp)
+                    ) {
                         Button(
                             onClick = { showConfirmDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = CoralRed),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = CoralRed,
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(PillCornerRadius),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
-                                .height(54.dp)
+                                .height(56.dp)
                         ) {
-                            Icon(Icons.Rounded.DeleteForever, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "Permanently Delete (${uiState.formattedReclaimableStorage})",
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                fontSize = 15.sp
+                                fontWeight = FontWeight.Black,
+                                fontSize = 16.sp,
+                                letterSpacing = (-0.3).sp
                             )
                         }
                     }
@@ -102,19 +135,39 @@ fun ReviewScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Rounded.DeleteSweep,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(28.dp),
+                        color = CoralRed.copy(alpha = 0.12f),
+                        modifier = Modifier.size(96.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteSweep,
+                                contentDescription = null,
+                                tint = CoralRed,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
-                        text = "No photos in trash",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        text = "Trash is empty",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
                         )
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Photos swiped left for deletion will gather here for your final confirmation.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
@@ -124,52 +177,68 @@ fun ReviewScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                // Storage Reclaim Banner
+                // Expressive Gradient Storage Reclaim Banner
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    shape = RoundedCornerShape(CardCornerRadius)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(CardCornerRadius), spotColor = CoralRed.copy(alpha = 0.25f)),
+                    shape = RoundedCornerShape(CardCornerRadius),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        CoralRed.copy(alpha = 0.18f),
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
+                                )
+                            )
+                            .padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = CoralRed,
-                            modifier = Modifier.size(44.dp)
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(52.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = Color.White)
+                                Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                         }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "${queue.size} photos marked for deletion",
+                                text = "${queue.size} Photos Queued",
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 18.sp
                                 )
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Freeing up ${uiState.formattedReclaimableStorage}",
+                                text = "Recover ${uiState.formattedReclaimableStorage} disk space",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                                    fontWeight = FontWeight.Medium
                                 )
                             )
                         }
                     }
                 }
 
-                // Grid of items in trash
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Expressive Grid of items in trash
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     itemsIndexed(queue, key = { index, item -> "${item.id}_$index" }) { index, item ->
@@ -187,9 +256,25 @@ fun ReviewScreen(
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Permanent Deletion") },
+            icon = {
+                Icon(
+                    Icons.Rounded.DeleteForever,
+                    contentDescription = null,
+                    tint = CoralRed,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    "Permanently Delete?",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
             text = {
-                Text("Are you sure you want to permanently delete ${queue.size} photos? This will free ${uiState.formattedReclaimableStorage} of storage.")
+                Text(
+                    "Are you sure you want to permanently delete ${queue.size} photos? This will free ${uiState.formattedReclaimableStorage} of storage on your device. This cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             },
             confirmButton = {
                 Button(
@@ -200,7 +285,7 @@ fun ReviewScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = CoralRed)
                 ) {
-                    Text("Delete")
+                    Text("Delete Permanently", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -239,12 +324,18 @@ private fun TrashGridItem(
     onClick: () -> Unit,
     onRestore: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 2.dp else 4.dp),
         modifier = Modifier
-            .aspectRatio(0.8f)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onClick() }
+            .aspectRatio(0.82f)
+            .scale(if (isPressed) 0.94f else 1.0f)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(interactionSource = interactionSource, indication = ripple()) { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -252,17 +343,52 @@ private fun TrashGridItem(
                     .data(item.contentUri)
                     .crossfade(true)
                     .build(),
-                contentDescription = null,
+                contentDescription = item.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            // Restore button overlay
+
+            // Bottom gradient scrim
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                        )
+                    )
+            )
+
+            // File size pill at bottom
             Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color.Black.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(6.dp),
+                color = Color.Black.copy(alpha = 0.55f),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = item.formattedSize,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                )
+            }
+
+            // Restore button overlay with emerald badge
+            Surface(
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.65f),
+                shadowElevation = 2.dp,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(6.dp)
+                    .clip(CircleShape)
                     .clickable { onRestore() }
             ) {
                 Icon(
@@ -270,8 +396,8 @@ private fun TrashGridItem(
                     contentDescription = "Restore",
                     tint = EmeraldMint,
                     modifier = Modifier
-                        .padding(4.dp)
-                        .size(18.dp)
+                        .padding(6.dp)
+                        .size(16.dp)
                 )
             }
         }

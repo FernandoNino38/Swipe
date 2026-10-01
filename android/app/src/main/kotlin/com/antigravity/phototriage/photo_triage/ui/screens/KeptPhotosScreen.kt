@@ -1,10 +1,14 @@
 package com.antigravity.phototriage.photo_triage.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -15,6 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.phototriage.photo_triage.domain.model.TriageItem
-import com.antigravity.phototriage.photo_triage.ui.components.M3ExpressiveLoadingIndicator
 import com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDialog
 import com.antigravity.phototriage.photo_triage.ui.theme.CardCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.EmeraldMint
@@ -49,16 +55,31 @@ fun KeptPhotosScreen(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(
-                        "Kept Photos",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                            letterSpacing = (-0.8).sp
+                    Column {
+                        Text(
+                            "Kept Photos",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-1.0).sp
+                            )
                         )
-                    )
+                        Text(
+                            "${keptList.size} preserved memories",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 },
                 navigationIcon = {
-                    FilledTonalIconButton(onClick = onBack) {
+                    FilledTonalIconButton(
+                        onClick = onBack,
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -75,26 +96,39 @@ fun KeptPhotosScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircleOutline,
-                        contentDescription = null,
-                        tint = EmeraldMint.copy(alpha = 0.6f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(28.dp),
+                        color = EmeraldMint.copy(alpha = 0.12f),
+                        modifier = Modifier.size(96.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircleOutline,
+                                contentDescription = null,
+                                tint = EmeraldMint,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         text = "No kept photos yet",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
                         )
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Photos you swipe right or mark to keep will appear here.",
-                        style = MaterialTheme.typography.bodySmall.copy(
+                        text = "Photos you swipe right or tap keep on will appear in this preserved list.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
@@ -104,54 +138,71 @@ fun KeptPhotosScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                // Header Banner
+                // Expressive Gradient Summary Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                    shape = RoundedCornerShape(CardCornerRadius)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(CardCornerRadius), spotColor = EmeraldMint.copy(alpha = 0.25f)),
+                    shape = RoundedCornerShape(CardCornerRadius),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        EmeraldMint.copy(alpha = 0.18f),
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
+                                )
+                            )
+                            .padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = EmeraldMint,
-                            modifier = Modifier.size(44.dp)
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(52.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White)
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                         }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "${keptList.size} Kept Photos",
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 18.sp
                                 )
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Saved and kept in your library",
+                                text = "Preserved and safe in your personal library",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                                    fontWeight = FontWeight.Medium
                                 )
                             )
                         }
                     }
                 }
 
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Expressive Grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    itemsIndexed(keptList, key = { _, item -> item.id }) { index, item ->
+                    itemsIndexed(keptList, key = { index, item -> "${item.id}_$index" }) { index, item ->
                         KeptGridItem(
                             item = item,
                             onClick = { selectedCarouselIndex = index },
@@ -182,12 +233,18 @@ private fun KeptGridItem(
     onClick: () -> Unit,
     onRemove: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 2.dp else 4.dp),
         modifier = Modifier
-            .aspectRatio(0.8f)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onClick() }
+            .aspectRatio(0.82f)
+            .scale(if (isPressed) 0.94f else 1.0f)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(interactionSource = interactionSource, indication = ripple()) { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -199,13 +256,50 @@ private fun KeptGridItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            // Overlay button to remove from kept
+
+            // Gradient scrim at bottom
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                        )
+                    )
+            )
+
+            // Resolution / aspect tag pill
+            if (item.ratioLabel.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Black.copy(alpha = 0.55f),
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = item.ratioLabel,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // Overlay button to remove from kept with ripple
             Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color.Black.copy(alpha = 0.6f),
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.65f),
+                shadowElevation = 2.dp,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(6.dp)
+                    .clip(CircleShape)
                     .clickable { onRemove() }
             ) {
                 Icon(
@@ -213,8 +307,8 @@ private fun KeptGridItem(
                     contentDescription = "Remove from Kept",
                     tint = EmeraldMint,
                     modifier = Modifier
-                        .padding(4.dp)
-                        .size(18.dp)
+                        .padding(6.dp)
+                        .size(16.dp)
                 )
             }
         }

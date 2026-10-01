@@ -1,11 +1,18 @@
 package com.antigravity.phototriage.photo_triage.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -16,14 +23,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.phototriage.photo_triage.domain.model.TriageItem
+import com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDialog
 import com.antigravity.phototriage.photo_triage.ui.theme.CardCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.RosePink
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
@@ -47,16 +59,31 @@ fun FavoritesScreen(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(
-                        "Favorites",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                            letterSpacing = (-0.8).sp
+                    Column {
+                        Text(
+                            "Favorites",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-1.0).sp
+                            )
                         )
-                    )
+                        Text(
+                            "${favorites.size} cherished items",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 },
                 navigationIcon = {
-                    FilledTonalIconButton(onClick = onBack) {
+                    FilledTonalIconButton(
+                        onClick = onBack,
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -73,26 +100,39 @@ fun FavoritesScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Rounded.FavoriteBorder,
-                        contentDescription = null,
-                        tint = RosePink.copy(alpha = 0.6f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(28.dp),
+                        color = RosePink.copy(alpha = 0.12f),
+                        modifier = Modifier.size(96.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.FavoriteBorder,
+                                contentDescription = null,
+                                tint = RosePink,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         text = "No favorites yet",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
                         )
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Photos marked as favorites will appear here.",
-                        style = MaterialTheme.typography.bodySmall.copy(
+                        text = "Tap the heart button on photos to build your curated collection here.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
@@ -102,54 +142,71 @@ fun FavoritesScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                // Banner
+                // Expressive Gradient Summary Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
-                    shape = RoundedCornerShape(CardCornerRadius)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(CardCornerRadius), spotColor = RosePink.copy(alpha = 0.25f)),
+                    shape = RoundedCornerShape(CardCornerRadius),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        RosePink.copy(alpha = 0.18f),
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
+                                )
+                            )
+                            .padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = RosePink,
-                            modifier = Modifier.size(44.dp)
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(52.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.Favorite, contentDescription = null, tint = Color.White)
+                                Icon(Icons.Rounded.Favorite, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                         }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "${favorites.size} Favorite Photos",
+                                text = "${favorites.size} Starred Photos",
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 18.sp
                                 )
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Synced with native device gallery",
+                                text = "Synced directly with your Android gallery",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                                    fontWeight = FontWeight.Medium
                                 )
                             )
                         }
                     }
                 }
 
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Expressive Grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    itemsIndexed(favorites, key = { _, item -> item.id }) { index, item ->
+                    itemsIndexed(favorites, key = { index, item -> "${item.id}_$index" }) { index, item ->
                         FavoriteGridItem(
                             item = item,
                             onClick = { selectedCarouselIndex = index },
@@ -163,7 +220,7 @@ fun FavoritesScreen(
 
     // Material 3 Carousel triggered by clicking a favorite photo
     selectedCarouselIndex?.let { index ->
-        com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDialog(
+        M3PhotoCarouselDialog(
             items = favorites,
             initialIndex = index,
             removeActionLabel = "Remove from Favorites",
@@ -180,12 +237,18 @@ private fun FavoriteGridItem(
     onClick: () -> Unit,
     onRemove: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 2.dp else 4.dp),
         modifier = Modifier
-            .aspectRatio(0.8f)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onClick() }
+            .aspectRatio(0.82f)
+            .scale(if (isPressed) 0.94f else 1.0f)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(interactionSource = interactionSource, indication = ripple()) { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -193,16 +256,54 @@ private fun FavoriteGridItem(
                     .data(item.contentUri)
                     .crossfade(true)
                     .build(),
-                contentDescription = null,
+                contentDescription = item.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+
+            // Gradient scrim at bottom for text contrast
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                        )
+                    )
+            )
+
+            // Resolution / aspect tag pill
+            if (item.ratioLabel.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Black.copy(alpha = 0.55f),
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = item.ratioLabel,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // Unfavorite action pill overlay with ripple
             Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color.Black.copy(alpha = 0.6f),
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.65f),
+                shadowElevation = 2.dp,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(6.dp)
+                    .clip(CircleShape)
                     .clickable { onRemove() }
             ) {
                 Icon(
@@ -210,8 +311,8 @@ private fun FavoriteGridItem(
                     contentDescription = "Unfavorite",
                     tint = RosePink,
                     modifier = Modifier
-                        .padding(4.dp)
-                        .size(18.dp)
+                        .padding(6.dp)
+                        .size(16.dp)
                 )
             }
         }

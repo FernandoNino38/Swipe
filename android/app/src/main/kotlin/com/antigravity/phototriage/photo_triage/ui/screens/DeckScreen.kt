@@ -7,7 +7,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.antigravity.phototriage.photo_triage.domain.model.GalleryAlbum
@@ -24,6 +27,8 @@ import com.antigravity.phototriage.photo_triage.ui.components.QuickActionsBar
 import com.antigravity.phototriage.photo_triage.ui.components.TriageCard
 import com.antigravity.phototriage.photo_triage.ui.theme.ChipCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
+import com.antigravity.phototriage.photo_triage.ui.theme.DialogCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageUiState
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
 
@@ -386,41 +391,119 @@ fun PhotoDetailModalDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(52.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+        },
         title = {
             Text(
                 text = item.title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                )
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                ),
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         },
         text = {
-            Column {
-                Text("Date: ${item.formattedDate} at ${item.formattedTime}")
-                Text("Size: ${item.formattedSize}")
-                Text("Resolution: ${item.formattedResolution}")
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        DetailRow(label = "Date", value = "${item.formattedDate} · ${item.formattedTime}")
+                        DetailRow(label = "Size", value = item.formattedSize)
+                        DetailRow(label = "Resolution", value = item.formattedResolution)
+                        if (item.ratioLabel.isNotEmpty()) {
+                            DetailRow(label = "Aspect Ratio", value = item.ratioLabel)
+                        }
+                    }
+                }
+
                 if (!item.filePath.isNullOrEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Path: ${item.filePath}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = item.filePath,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontSize = 11.sp
+                            ),
+                            modifier = Modifier.padding(10.dp)
                         )
-                    )
+                    }
                 }
             }
         },
         confirmButton = {
             if (!item.filePath.isNullOrEmpty()) {
-                FilledTonalButton(onClick = { onOpenInFiles(item.filePath) }) {
-                    Text("Show on Gallery")
+                Button(
+                    onClick = { onOpenInFiles(item.filePath) },
+                    shape = RoundedCornerShape(PillCornerRadius),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Show on Gallery", fontWeight = FontWeight.Bold)
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text("Close", fontWeight = FontWeight.SemiBold)
             }
-        }
+        },
+        shape = RoundedCornerShape(DialogCornerRadius)
     )
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Bold
+            )
+        )
+    }
 }

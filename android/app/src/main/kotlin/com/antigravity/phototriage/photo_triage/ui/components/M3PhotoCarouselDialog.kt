@@ -20,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -34,6 +36,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.phototriage.photo_triage.domain.model.TriageItem
 import com.antigravity.phototriage.photo_triage.ui.screens.PhotoDetailModalDialog
+import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
 import kotlin.math.absoluteValue
 
 /**
@@ -73,86 +76,96 @@ fun M3PhotoCarouselDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(Color(0xFF090A0F)) // Expressive deep OLED dark canvas
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .systemBarsPadding()
             ) {
-                // Top App Bar Controls
+                // Top App Bar Controls Floating Island
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
+                    FilledTonalIconButton(
                         onClick = onDismiss,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color.White.copy(alpha = 0.2f),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.15f),
                             contentColor = Color.White
-                        )
+                        ),
+                        modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        Icon(Icons.Rounded.Close, contentDescription = "Close", modifier = Modifier.size(20.dp))
                     }
 
-                    // Indicator Pill
+                    // Indicator Pill with Expressive typography
                     Surface(
                         shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.2f)
+                        color = Color.White.copy(alpha = 0.15f),
+                        shadowElevation = 4.dp
                     ) {
                         Text(
                             text = "${pagerState.currentPage + 1} / ${items.size}",
                             color = Color.White,
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 0.5.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         // Remove button if action provided
                         if (onRemoveItem != null && currentItem != null) {
-                            IconButton(
+                            FilledTonalIconButton(
                                 onClick = {
                                     onRemoveItem(currentItem)
                                     if (items.size <= 1) {
                                         onDismiss()
                                     }
                                 },
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = Color.White.copy(alpha = 0.2f),
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = Color.White.copy(alpha = 0.15f),
                                     contentColor = Color.White
-                                )
+                                ),
+                                modifier = Modifier.size(44.dp)
                             ) {
                                 Icon(
                                     Icons.Rounded.DeleteOutline,
-                                    contentDescription = removeActionLabel ?: "Remove"
+                                    contentDescription = removeActionLabel ?: "Remove",
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
                         }
 
                         // Info Button
-                        IconButton(
+                        FilledTonalIconButton(
                             onClick = { showDetailSheet = true },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = Color.White.copy(alpha = 0.2f),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = Color.White.copy(alpha = 0.15f),
                                 contentColor = Color.White
-                            )
+                            ),
+                            modifier = Modifier.size(44.dp)
                         ) {
-                            Icon(Icons.Rounded.Info, contentDescription = "Photo Details")
+                            Icon(Icons.Rounded.Info, contentDescription = "Photo Details", modifier = Modifier.size(20.dp))
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Material 3 Carousel Multi-browse with edge peek and scale
+                // Material 3 Carousel Multi-browse with dynamic edge peek and scale
                 HorizontalPager(
                     state = pagerState,
-                    contentPadding = PaddingValues(horizontal = 40.dp),
+                    contentPadding = PaddingValues(horizontal = 32.dp),
                     pageSpacing = 16.dp,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -160,14 +173,13 @@ fun M3PhotoCarouselDialog(
                 ) { page ->
                     val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
 
-                    // M3 motion calculation for peek items: scale between 0.86 and 1.0, alpha between 0.6 and 1.0
                     val scale = lerp(
                         start = 0.86f,
                         stop = 1f,
                         fraction = 1f - pageOffset.coerceIn(0f, 1f)
                     )
                     val alpha = lerp(
-                        start = 0.55f,
+                        start = 0.5f,
                         stop = 1f,
                         fraction = 1f - pageOffset.coerceIn(0f, 1f)
                     )
@@ -182,8 +194,9 @@ fun M3PhotoCarouselDialog(
                                 scaleY = scale
                                 this.alpha = alpha
                             }
-                            .clip(RoundedCornerShape(28.dp))
-                            .background(Color.DarkGray),
+                            .shadow(elevation = 16.dp, shape = RoundedCornerShape(32.dp), spotColor = Color.Black.copy(alpha = 0.5f))
+                            .clip(RoundedCornerShape(32.dp))
+                            .background(Color(0xFF141720)),
                         contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
@@ -195,12 +208,62 @@ fun M3PhotoCarouselDialog(
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
+
+                        // Floating bottom gradient with photo metadata chip
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))
+                                    )
+                                )
+                        )
+
+                        // Bottom-start resolution & size badges
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Black.copy(alpha = 0.6f)
+                            ) {
+                                Text(
+                                    text = item.formattedSize,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                            if (item.ratioLabel.isNotEmpty()) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.Black.copy(alpha = 0.6f)
+                                ) {
+                                    Text(
+                                        text = item.ratioLabel,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Bottom Action Bar: "Show on Gallery"
+                // Bottom Action Bar: "Show on Gallery" with pill shape and expressive elevation
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -214,14 +277,14 @@ fun M3PhotoCarouselDialog(
                                 onOpenInGallery(path)
                             }
                         },
-                        shape = RoundedCornerShape(com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius),
+                        shape = RoundedCornerShape(PillCornerRadius),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 1.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp),
                         modifier = Modifier
-                            .fillMaxWidth(0.9f)
+                            .fillMaxWidth(0.92f)
                             .height(56.dp)
                     ) {
                         Icon(
