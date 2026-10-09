@@ -52,3 +52,9 @@ app.*.map.json
 
 # Android APK binaries (distributed via GitHub Releases)
 *.apk
+
+# Android/Gradle build outputs
+android/build/
+android/.gradle/
+android/app/build/
+android/local.properties
