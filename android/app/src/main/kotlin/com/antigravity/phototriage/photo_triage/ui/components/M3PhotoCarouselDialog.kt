@@ -6,8 +6,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.*
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +38,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.antigravity.phototriage.photo_triage.domain.model.TriageItem
 import com.antigravity.phototriage.photo_triage.ui.screens.PhotoDetailModalDialog
-import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.CarouselItemCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.FloatingToolbarCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.OverlayPillCornerRadius
 import kotlin.math.absoluteValue
 
 /**
@@ -44,6 +48,8 @@ import kotlin.math.absoluteValue
  * Displays items with dynamic scale and peek effect, allows viewing photo info, and provides
  * a "Show on Gallery" action button.
  */
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun M3PhotoCarouselDialog(
     items: List<TriageItem>,
@@ -59,12 +65,10 @@ fun M3PhotoCarouselDialog(
     }
 
     val safeInitial = initialIndex.coerceIn(0, items.lastIndex)
-    val pagerState = rememberPagerState(
-        initialPage = safeInitial,
-        pageCount = { items.size }
-    )
+    val carouselState = rememberCarouselState(initialItem = safeInitial) { items.size }
     var showDetailSheet by remember { mutableStateOf(false) }
-    val currentItem = items.getOrNull(pagerState.currentPage)
+    val currentPage = carouselState.currentItem
+    val currentItem = items.getOrNull(currentPage)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -104,15 +108,15 @@ fun M3PhotoCarouselDialog(
 
                     // Indicator Pill with Expressive typography
                     Surface(
-                        shape = CircleShape,
+                        shape = RoundedCornerShape(OverlayPillCornerRadius),
                         color = Color.White.copy(alpha = 0.15f),
                         shadowElevation = 4.dp
                     ) {
                         Text(
-                            text = "${pagerState.currentPage + 1} / ${items.size}",
+                            text = "${currentPage + 1} / ${items.size}",
                             color = Color.White,
                             style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Black,
+                                fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 0.5.sp
                             ),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -162,40 +166,22 @@ fun M3PhotoCarouselDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Material 3 Carousel Multi-browse with dynamic edge peek and scale
-                HorizontalPager(
-                    state = pagerState,
-                    contentPadding = PaddingValues(horizontal = 32.dp),
-                    pageSpacing = 16.dp,
+                // Official Material 3 Carousel (multi-browse): one large photo with peeking neighbours
+                HorizontalMultiBrowseCarousel(
+                    state = carouselState,
+                    preferredItemWidth = (LocalConfiguration.current.screenWidthDp * 0.82f).dp,
+                    itemSpacing = 12.dp,
+                    contentPadding = PaddingValues(horizontal = 20.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) { page ->
-                    val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
-
-                    val scale = lerp(
-                        start = 0.86f,
-                        stop = 1f,
-                        fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                    )
-                    val alpha = lerp(
-                        start = 0.5f,
-                        stop = 1f,
-                        fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                    )
-
                     val item = items[page]
 
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                                this.alpha = alpha
-                            }
-                            .shadow(elevation = 16.dp, shape = RoundedCornerShape(32.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                            .clip(RoundedCornerShape(32.dp))
+                            .fillMaxHeight()
+                            .maskClip(RoundedCornerShape(CarouselItemCornerRadius))
                             .background(Color(0xFF141720)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -263,43 +249,57 @@ fun M3PhotoCarouselDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Bottom Action Bar: "Show on Gallery" with pill shape and expressive elevation
-                Row(
+                // Subtle bottom gradient accent behind the action bar
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Button(
-                        onClick = {
-                            val path = currentItem?.filePath
-                            if (!path.isNullOrEmpty()) {
-                                onOpenInGallery(path)
-                            }
-                        },
-                        shape = RoundedCornerShape(PillCornerRadius),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.92f)
-                            .height(56.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Show on Gallery",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                                )
                             )
                         )
+                ) {
+                    // Bottom Action Bar: "Show on Gallery" with pill shape and expressive elevation
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Button(
+                            onClick = {
+                                val path = currentItem?.filePath
+                                if (!path.isNullOrEmpty()) {
+                                    onOpenInGallery(path)
+                                }
+                            },
+                            shape = RoundedCornerShape(FloatingToolbarCornerRadius),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp, pressedElevation = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(0.92f)
+                                .height(58.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Show on Gallery",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            )
+                        }
                     }
                 }
             }

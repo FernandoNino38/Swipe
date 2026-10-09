@@ -1,5 +1,9 @@
 package com.antigravity.phototriage.photo_triage.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Info
@@ -30,11 +35,12 @@ import com.antigravity.phototriage.photo_triage.ui.components.TriageCard
 import com.antigravity.phototriage.photo_triage.ui.theme.ChipCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
 import com.antigravity.phototriage.photo_triage.ui.theme.DialogCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.EmeraldMint
 import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageUiState
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckScreen(
     viewModel: TriageViewModel,
@@ -187,75 +193,115 @@ fun DeckScreen(
                 .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
-            when {
-                uiState.isLoading -> {
-                    M3ExpressiveLoadingIndicator(size = 56.dp, message = "Loading gallery photos...")
-                }
-                !uiState.hasMoreCards -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(32.dp)
-                    ) {
-                        Text(
-                            text = "All caught up!",
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "All photos in this album have been reviewed.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        FilledTonalButton(onClick = { viewModel.reloadPhotos() }) {
-                            Text("Review Again")
+            // Determine the current deck state key for AnimatedContent transitions
+            val deckStateKey = when {
+                uiState.isLoading -> "loading"
+                !uiState.hasMoreCards -> "empty"
+                else -> "cards"
+            }
+
+            AnimatedContent(
+                targetState = deckStateKey,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                label = "DeckContentTransition"
+            ) { state ->
+                when (state) {
+                    "loading" -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            M3ExpressiveLoadingIndicator(size = 56.dp, message = "Loading gallery photos...")
                         }
                     }
-                }
-                else -> {
-                    // Card Stack: Card N+1 underneath, Card N on top
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        uiState.nextItem?.let { next ->
-                            TriageCard(
-                                item = next,
-                                isTopCard = false,
-                                isFitMode = uiState.isFitMode,
-                                lang = uiState.appLanguage,
-                                animateTrigger = null,
-                                onSwipeRight = {},
-                                onSwipeLeft = {},
-                                onTapDetail = {},
-                                onToggleFitMode = {},
-                                modifier = Modifier.fillMaxSize()
-                            )
+                    "empty" -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(32.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(28.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(72.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.CheckCircleOutline,
+                                            contentDescription = null,
+                                            tint = EmeraldMint,
+                                            modifier = Modifier.size(36.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Text(
+                                    text = "All caught up!",
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "All photos in this album have been reviewed.",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(20.dp))
+                                FilledTonalButton(onClick = { viewModel.reloadPhotos() }) {
+                                    Text("Review Again")
+                                }
+                            }
                         }
+                    }
+                    else -> {
+                        // Card Stack: Card N+1 underneath, Card N on top
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            uiState.nextItem?.let { next ->
+                                TriageCard(
+                                    item = next,
+                                    isTopCard = false,
+                                    isFitMode = uiState.isFitMode,
+                                    lang = uiState.appLanguage,
+                                    animateTrigger = null,
+                                    onSwipeRight = {},
+                                    onSwipeLeft = {},
+                                    onTapDetail = {},
+                                    onToggleFitMode = {},
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
 
-                        uiState.currentItem?.let { current ->
-                            TriageCard(
-                                item = current,
-                                isTopCard = true,
-                                isFitMode = uiState.isFitMode,
-                                lang = uiState.appLanguage,
-                                animateTrigger = cardAnimateTrigger,
-                                onSwipeRight = {
-                                    cardAnimateTrigger = null
-                                    viewModel.swipeRight()
-                                },
-                                onSwipeLeft = {
-                                    cardAnimateTrigger = null
-                                    viewModel.swipeLeft()
-                                },
-                                onFavorite = {
-                                    cardAnimateTrigger = null
-                                    viewModel.favoriteCurrentPhoto()
-                                },
-                                onTapDetail = { selectedDetailItem = current },
-                                onToggleFitMode = { viewModel.toggleFitMode() },
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            uiState.currentItem?.let { current ->
+                                TriageCard(
+                                    item = current,
+                                    isTopCard = true,
+                                    isFitMode = uiState.isFitMode,
+                                    lang = uiState.appLanguage,
+                                    animateTrigger = cardAnimateTrigger,
+                                    onSwipeRight = {
+                                        cardAnimateTrigger = null
+                                        viewModel.swipeRight()
+                                    },
+                                    onSwipeLeft = {
+                                        cardAnimateTrigger = null
+                                        viewModel.swipeLeft()
+                                    },
+                                    onFavorite = {
+                                        cardAnimateTrigger = null
+                                        viewModel.favoriteCurrentPhoto()
+                                    },
+                                    onTapDetail = { selectedDetailItem = current },
+                                    onToggleFitMode = { viewModel.toggleFitMode() },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
@@ -339,7 +385,7 @@ fun AlbumSelectionModalSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
     ) {
         Column(
             modifier = Modifier
@@ -443,6 +489,7 @@ fun AlbumSelectionModalSheet(
     }
 }
 
+
 @Composable
 fun PhotoDetailModalDialog(
     item: TriageItem,
@@ -525,7 +572,7 @@ fun PhotoDetailModalDialog(
             if (!item.filePath.isNullOrEmpty()) {
                 Button(
                     onClick = { onOpenInFiles(item.filePath) },
-                    shape = RoundedCornerShape(PillCornerRadius),
+                    shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
@@ -537,7 +584,10 @@ fun PhotoDetailModalDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(28.dp)
+            ) {
                 Text("Close", fontWeight = FontWeight.SemiBold)
             }
         },

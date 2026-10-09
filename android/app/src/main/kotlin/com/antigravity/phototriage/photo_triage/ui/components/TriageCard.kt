@@ -41,11 +41,24 @@ import com.antigravity.phototriage.photo_triage.domain.model.TriageItem
 import com.antigravity.phototriage.photo_triage.ui.theme.CardCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
 import com.antigravity.phototriage.photo_triage.ui.theme.EmeraldMint
+import com.antigravity.phototriage.photo_triage.ui.theme.HeroCardCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.OverlayPillCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.RosePink
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+/**
+ * Material 3 Expressive Triage Card
+ *
+ * The hero component of Swipe – a swipeable photo card with:
+ * - M3 Expressive spring-based snap-back physics
+ * - Dynamic rotation with soft angle limiting
+ * - Color-coded edge glow overlays (delete/keep/favorite)
+ * - Animated decision stamps with scale + rotation
+ * - Blurred backdrop in Smart Fit mode for immersive viewing
+ * - Hero-sized corner radius (36dp) for expressive proportions
+ */
 @Composable
 fun TriageCard(
     item: TriageItem,
@@ -64,7 +77,6 @@ fun TriageCard(
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
     val cardScale = remember { Animatable(1f) }
-
     val cardAlpha = remember { Animatable(1f) }
 
     val swipeThreshold = 260f
@@ -77,25 +89,25 @@ fun TriageCard(
     // Right swipe = positive Dx = Keep action
     val keepIntensity = (currentDx / swipeThreshold).coerceIn(0f, 1f)
 
-    // Programmatic trigger from buttons with smooth Material 3 Expressive exit
+    // Programmatic trigger from buttons with M3 Expressive exit animations
     LaunchedEffect(animateTrigger) {
         when (animateTrigger) {
             "LEFT" -> {
                 coroutineScope.launch {
                     cardScale.animateTo(
-                        targetValue = 0.88f,
-                        animationSpec = tween(durationMillis = 260, easing = M3Motion.EmphasizedAccelerate)
+                        targetValue = 0.85f,
+                        animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
                     )
                 }
                 coroutineScope.launch {
                     cardAlpha.animateTo(
                         targetValue = 0f,
-                        animationSpec = tween(durationMillis = 240, easing = M3Motion.EmphasizedAccelerate)
+                        animationSpec = tween(durationMillis = 260, easing = M3Motion.EmphasizedAccelerate)
                     )
                 }
                 offsetX.animateTo(
                     targetValue = -1400f,
-                    animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
+                    animationSpec = tween(durationMillis = 300, easing = M3Motion.EmphasizedAccelerate)
                 )
                 onSwipeLeft()
                 cardAlpha.snapTo(1f)
@@ -106,19 +118,19 @@ fun TriageCard(
             "RIGHT" -> {
                 coroutineScope.launch {
                     cardScale.animateTo(
-                        targetValue = 0.88f,
-                        animationSpec = tween(durationMillis = 260, easing = M3Motion.EmphasizedAccelerate)
+                        targetValue = 0.85f,
+                        animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
                     )
                 }
                 coroutineScope.launch {
                     cardAlpha.animateTo(
                         targetValue = 0f,
-                        animationSpec = tween(durationMillis = 240, easing = M3Motion.EmphasizedAccelerate)
+                        animationSpec = tween(durationMillis = 260, easing = M3Motion.EmphasizedAccelerate)
                     )
                 }
                 offsetX.animateTo(
                     targetValue = 1400f,
-                    animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
+                    animationSpec = tween(durationMillis = 300, easing = M3Motion.EmphasizedAccelerate)
                 )
                 onSwipeRight()
                 cardAlpha.snapTo(1f)
@@ -127,23 +139,20 @@ fun TriageCard(
                 offsetY.snapTo(0f)
             }
             "FAVORITE" -> {
-                // Expressive gentle pop then smooth sweep to right
+                // Expressive playful pop then smooth sweep to right
                 cardScale.animateTo(
-                    targetValue = 1.05f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMediumLow
-                    )
+                    targetValue = 1.08f,
+                    animationSpec = M3Motion.ExpressivePlayfulSpring
                 )
                 coroutineScope.launch {
                     cardAlpha.animateTo(
                         targetValue = 0f,
-                        animationSpec = tween(durationMillis = 240, easing = M3Motion.EmphasizedAccelerate)
+                        animationSpec = tween(durationMillis = 260, easing = M3Motion.EmphasizedAccelerate)
                     )
                 }
                 offsetX.animateTo(
                     targetValue = 1400f,
-                    animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
+                    animationSpec = tween(durationMillis = 300, easing = M3Motion.EmphasizedAccelerate)
                 )
                 onFavorite()
                 cardScale.snapTo(1f)
@@ -172,11 +181,11 @@ fun TriageCard(
                         if (dx > swipeThreshold) {
                             coroutineScope.launch {
                                 coroutineScope.launch {
-                                    cardAlpha.animateTo(0f, tween(200, easing = M3Motion.EmphasizedAccelerate))
+                                    cardAlpha.animateTo(0f, tween(220, easing = M3Motion.EmphasizedAccelerate))
                                 }
                                 offsetX.animateTo(
                                     targetValue = 1400f,
-                                    animationSpec = tween(durationMillis = 250, easing = M3Motion.EmphasizedAccelerate)
+                                    animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
                                 )
                                 onSwipeRight()
                                 cardAlpha.snapTo(1f)
@@ -186,11 +195,11 @@ fun TriageCard(
                         } else if (dx < -swipeThreshold) {
                             coroutineScope.launch {
                                 coroutineScope.launch {
-                                    cardAlpha.animateTo(0f, tween(200, easing = M3Motion.EmphasizedAccelerate))
+                                    cardAlpha.animateTo(0f, tween(220, easing = M3Motion.EmphasizedAccelerate))
                                 }
                                 offsetX.animateTo(
                                     targetValue = -1400f,
-                                    animationSpec = tween(durationMillis = 250, easing = M3Motion.EmphasizedAccelerate)
+                                    animationSpec = tween(durationMillis = 280, easing = M3Motion.EmphasizedAccelerate)
                                 )
                                 onSwipeLeft()
                                 cardAlpha.snapTo(1f)
@@ -198,14 +207,11 @@ fun TriageCard(
                                 offsetY.snapTo(0f)
                             }
                         } else {
-                            // Expressive elastic bounce back to center
+                            // M3 Expressive: Bouncy elastic snap-back with natural overshoot
                             coroutineScope.launch {
                                 cardScale.animateTo(
                                     targetValue = 1f,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
-                                    )
+                                    animationSpec = M3Motion.ExpressiveBouncySpring
                                 )
                             }
                             coroutineScope.launch {
@@ -245,10 +251,10 @@ fun TriageCard(
                 )
             }
     ) {
-        // Main Card Surface
+        // Main Card Surface with hero-sized M3 Expressive corner radius
         Card(
-            shape = RoundedCornerShape(CardCornerRadius),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = RoundedCornerShape(HeroCardCornerRadius),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
             modifier = Modifier.fillMaxSize(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
@@ -294,7 +300,7 @@ fun TriageCard(
                     )
                 }
 
-                // Efeito de Borda Esquerda (Vermelha / Excluir) que surge ao deslizar para esquerda
+                // Delete edge glow (left swipe → gradient on right side)
                 if (isTopCard && deleteIntensity > 0.05f) {
                     Box(
                         modifier = Modifier
@@ -311,7 +317,7 @@ fun TriageCard(
                     )
                 }
 
-                // Efeito de Borda Direita (Verde / Manter) que surge ao deslizar para direita
+                // Keep edge glow (right swipe → gradient on left side)
                 if (isTopCard && keepIntensity > 0.05f) {
                     Box(
                         modifier = Modifier
@@ -331,7 +337,7 @@ fun TriageCard(
                 // Favorite Indicator Badge (Top-Left)
                 if (isTopCard && item.isFavorite) {
                     Surface(
-                        shape = RoundedCornerShape(PillCornerRadius),
+                        shape = RoundedCornerShape(OverlayPillCornerRadius),
                         color = Color.Black.copy(alpha = 0.55f),
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -361,7 +367,7 @@ fun TriageCard(
                 // Fit / Fill Toggle Pill (Top-Right)
                 if (isTopCard) {
                     Surface(
-                        shape = RoundedCornerShape(PillCornerRadius),
+                        shape = RoundedCornerShape(OverlayPillCornerRadius),
                         color = Color.Black.copy(alpha = 0.55f),
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -390,7 +396,7 @@ fun TriageCard(
                     }
                 }
 
-                // Swipe Decision Stamp: DISCARD (Left Swipe -> Badge on Right)
+                // Swipe Decision Stamp: DISCARD (Left Swipe → Badge on Right)
                 if (isTopCard && deleteIntensity > 0.05f) {
                     val discardText = if (lang == "pt") "EXCLUIR" else "DISCARD"
                     Surface(
@@ -419,7 +425,7 @@ fun TriageCard(
                     }
                 }
 
-                // Swipe Decision Stamp: KEEP (Right Swipe -> Badge on Left)
+                // Swipe Decision Stamp: KEEP (Right Swipe → Badge on Left)
                 if (isTopCard && keepIntensity > 0.05f) {
                     val keepText = if (lang == "pt") "MANTER" else "KEEP"
                     Surface(

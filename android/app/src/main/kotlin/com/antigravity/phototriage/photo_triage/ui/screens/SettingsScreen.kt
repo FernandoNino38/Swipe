@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,9 +29,10 @@ import com.antigravity.phototriage.photo_triage.ui.theme.ChipCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
 import com.antigravity.phototriage.photo_triage.ui.theme.DialogCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
+import com.antigravity.phototriage.photo_triage.ui.theme.FloatingToolbarCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: TriageViewModel,
@@ -43,11 +45,11 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         "Settings",
-                        style = MaterialTheme.typography.headlineLarge.copy(
+                        style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-1.0).sp
                         )
@@ -64,7 +66,7 @@ fun SettingsScreen(
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
@@ -342,8 +344,8 @@ fun SettingsScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(24.dp))
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(28.dp))
                             .background(
                                 Brush.linearGradient(
                                     listOf(
@@ -370,7 +372,7 @@ fun SettingsScreen(
                         )
                     )
                     Text(
-                        text = "Version 1.0.0 (Native Android · Material 3 Expressive)",
+                        text = "Version 1.0.0 (Native Android · Material 3 Expressive · Spring Motion)",
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -390,7 +392,7 @@ fun SettingsScreen(
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/FernandoNino38/Swipe"))
                             context.startActivity(intent)
                         },
-                        shape = RoundedCornerShape(PillCornerRadius),
+                        shape = RoundedCornerShape(FloatingToolbarCornerRadius),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                         ),
@@ -467,9 +469,9 @@ private fun SettingsSectionHeader(
         modifier = modifier.fillMaxWidth()
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.size(36.dp)
+            modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

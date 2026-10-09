@@ -19,10 +19,12 @@ import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.RestoreFromTrash
 import androidx.compose.material3.*
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -39,11 +41,12 @@ import com.antigravity.phototriage.photo_triage.ui.components.M3PhotoCarouselDia
 import com.antigravity.phototriage.photo_triage.ui.theme.CardCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.CoralRed
 import com.antigravity.phototriage.photo_triage.ui.theme.EmeraldMint
+import com.antigravity.phototriage.photo_triage.ui.theme.GridItemCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.PillCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ReviewScreen(
     viewModel: TriageViewModel,
@@ -66,7 +69,10 @@ fun ReviewScreen(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = {
@@ -98,7 +104,8 @@ fun ReviewScreen(
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
@@ -109,17 +116,19 @@ fun ReviewScreen(
                     onClick = { showConfirmDialog = true },
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(32.dp),
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
-                    modifier = Modifier.padding(bottom = 16.dp, end = 8.dp)
+                    modifier = Modifier
+                        .shadow(elevation = 12.dp, shape = RoundedCornerShape(32.dp), spotColor = CoralRed.copy(alpha = 0.3f))
+                        .padding(bottom = 16.dp, end = 8.dp)
                 ) {
-                    Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "Delete All (${uiState.formattedReclaimableStorage})",
                         fontWeight = FontWeight.Black,
                         fontSize = 16.sp,
-                        letterSpacing = (-0.3).sp
+                        letterSpacing = (-0.4).sp
                     )
                 }
             }
@@ -180,7 +189,7 @@ fun ReviewScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(CardCornerRadius), spotColor = CoralRed.copy(alpha = 0.25f)),
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(CardCornerRadius), spotColor = CoralRed.copy(alpha = 0.30f)),
                     shape = RoundedCornerShape(CardCornerRadius),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                 ) {
@@ -240,11 +249,13 @@ fun ReviewScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     itemsIndexed(queue, key = { _, item -> item.id }) { index, item ->
-                        TrashGridItem(
+                        Box(Modifier.animateItem()) {
+                            TrashGridItem(
                             item = item,
                             onClick = { selectedCarouselIndex = index },
                             onRestore = { viewModel.removeFromTrash(item) }
                         )
+                        }
                     }
                 }
             }
@@ -300,7 +311,8 @@ fun ReviewScreen(
                 TextButton(onClick = { showConfirmDialog = false }) {
                     Text("Cancel")
                 }
-            }
+            },
+            shape = RoundedCornerShape(32.dp)
         )
     }
 
@@ -336,13 +348,13 @@ private fun TrashGridItem(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     Card(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(GridItemCornerRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 2.dp else 4.dp),
         modifier = Modifier
             .aspectRatio(0.82f)
             .scale(if (isPressed) 0.94f else 1.0f)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(GridItemCornerRadius))
             .clickable(interactionSource = interactionSource, indication = ripple()) { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

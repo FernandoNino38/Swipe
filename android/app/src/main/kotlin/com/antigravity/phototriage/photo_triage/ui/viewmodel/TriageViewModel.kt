@@ -380,7 +380,13 @@ class TriageViewModel(application: Application) : AndroidViewModel(application) 
 
     fun loadFavoritePhotos() {
         viewModelScope.launch {
-            val items = repository.loadPhotosByIds(persistentFavoriteIds).map { it.copy(isFavorite = true) }
+            val items = try {
+                repository.loadPhotosByIds(persistentFavoriteIds)
+                    .map { it.copy(isFavorite = true) }
+                    .distinctBy { it.id }
+            } catch (e: Exception) {
+                emptyList()
+            }
             _uiState.update { it.copy(favoriteItems = items) }
         }
     }

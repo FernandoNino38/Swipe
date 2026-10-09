@@ -10,20 +10,31 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PhotoLibrary
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -32,6 +43,8 @@ import com.antigravity.phototriage.photo_triage.ui.screens.DeckScreen
 import com.antigravity.phototriage.photo_triage.ui.screens.FavoritesScreen
 import com.antigravity.phototriage.photo_triage.ui.screens.ReviewScreen
 import com.antigravity.phototriage.photo_triage.ui.screens.SettingsScreen
+import com.antigravity.phototriage.photo_triage.ui.theme.ElectricBlue
+import com.antigravity.phototriage.photo_triage.ui.theme.FloatingToolbarCornerRadius
 import com.antigravity.phototriage.photo_triage.ui.theme.SwipeTheme
 import com.antigravity.phototriage.photo_triage.ui.viewmodel.TriageViewModel
 
@@ -71,61 +84,80 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (!hasPermission) {
-                    PermissionRequestScreen(
-                        onRequestPermission = {
-                            val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                                arrayOf(
-                                    Manifest.permission.READ_MEDIA_IMAGES,
-                                    Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-                                )
-                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
-                            } else {
-                                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                // M3 Expressive: Animated content transition between permission and main app
+                AnimatedContent(
+                    targetState = hasPermission,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                scaleIn(initialScale = 0.92f, animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                ))).togetherWith(
+                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium))
+                        )
+                    },
+                    label = "permission_content"
+                ) { granted ->
+                    if (!granted) {
+                        PermissionRequestScreen(
+                            onRequestPermission = {
+                                val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                    arrayOf(
+                                        Manifest.permission.READ_MEDIA_IMAGES,
+                                        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                                    )
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+                                } else {
+                                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                                }
+                                permissionLauncher.launch(permissionsToRequest)
                             }
-                            permissionLauncher.launch(permissionsToRequest)
-                        }
-                    )
-                } else {
-                    val navController = rememberNavController()
+                        )
+                    } else {
+                        val navController = rememberNavController()
 
-                    NavHost(
-                        navController = navController,
-                        startDestination = "deck"
-                    ) {
-                        composable("deck") {
-                            DeckScreen(
-                                viewModel = viewModel,
-                                onNavigateToTrash = { navController.navigate("review") },
-                                onNavigateToSettings = { navController.navigate("settings") },
-                                onNavigateToFavorites = { navController.navigate("favorites") },
-                                onNavigateToKept = { navController.navigate("kept") }
-                            )
-                        }
-                        composable("review") {
-                            ReviewScreen(
-                                viewModel = viewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable("favorites") {
-                            FavoritesScreen(
-                                viewModel = viewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable("kept") {
-                            com.antigravity.phototriage.photo_triage.ui.screens.KeptPhotosScreen(
-                                viewModel = viewModel,
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable("settings") {
-                            SettingsScreen(
-                                viewModel = viewModel,
-                                onBack = { navController.popBackStack() }
-                            )
+                        NavHost(
+                            navController = navController,
+                            startDestination = "deck",
+                            enterTransition = { androidx.compose.animation.slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it / 4 } + fadeIn() },
+                            exitTransition = { androidx.compose.animation.slideOutHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 6 } + fadeOut() },
+                            popEnterTransition = { androidx.compose.animation.slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 6 } + fadeIn() },
+                            popExitTransition = { androidx.compose.animation.slideOutHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it / 4 } + fadeOut() }
+                        ) {
+                            composable("deck") {
+                                DeckScreen(
+                                    viewModel = viewModel,
+                                    onNavigateToTrash = { navController.navigate("review") },
+                                    onNavigateToSettings = { navController.navigate("settings") },
+                                    onNavigateToFavorites = { navController.navigate("favorites") },
+                                    onNavigateToKept = { navController.navigate("kept") }
+                                )
+                            }
+                            composable("review") {
+                                ReviewScreen(
+                                    viewModel = viewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("favorites") {
+                                FavoritesScreen(
+                                    viewModel = viewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("kept") {
+                                com.antigravity.phototriage.photo_triage.ui.screens.KeptPhotosScreen(
+                                    viewModel = viewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("settings") {
+                                SettingsScreen(
+                                    viewModel = viewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }
@@ -145,8 +177,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Material 3 Expressive Permission Request Screen
+ *
+ * Features:
+ * - Hero-sized gradient icon container with spring-based breathing animation
+ * - Expressive typography with emphasized styles
+ * - Pill-shaped CTA button with colored shadow
+ * - Warm descriptive copy with M3 tonal hierarchy
+ */
 @Composable
 fun PermissionRequestScreen(onRequestPermission: () -> Unit) {
+    // M3 Expressive: Gentle breathing animation for the hero icon
+    val breathingScale by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "icon_breathing"
+    )
+
     Scaffold { innerPadding ->
         Box(
             modifier = Modifier
@@ -158,23 +209,95 @@ fun PermissionRequestScreen(onRequestPermission: () -> Unit) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // M3 Expressive: Hero gradient icon container
+                Surface(
+                    shape = RoundedCornerShape(32.dp),
+                    color = Color.Transparent,
+                    modifier = Modifier
+                        .size(96.dp)
+                        .scale(breathingScale)
+                        .shadow(
+                            elevation = 16.dp,
+                            shape = RoundedCornerShape(32.dp),
+                            spotColor = ElectricBlue.copy(alpha = 0.3f)
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.PhotoLibrary,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(44.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // M3 Expressive: Bold headline
                 Text(
                     text = "Permission Required",
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.5).sp
                     )
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // M3 Expressive: Warm descriptive body text
                 Text(
                     text = "Swipe needs photo access to help you triage and organize your gallery.",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 24.sp
                     ),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(onClick = onRequestPermission) {
-                    Text("Grant Permission")
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // M3 Expressive: Pill button with colored shadow
+                Button(
+                    onClick = onRequestPermission,
+                    shape = RoundedCornerShape(FloatingToolbarCornerRadius),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 8.dp,
+                        pressedElevation = 2.dp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(56.dp)
+                        .shadow(
+                            elevation = 12.dp,
+                            shape = RoundedCornerShape(FloatingToolbarCornerRadius),
+                            spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                        )
+                ) {
+                    Text(
+                        text = "Grant Permission",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.2).sp
+                        )
+                    )
                 }
             }
         }

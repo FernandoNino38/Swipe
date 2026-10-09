@@ -87,10 +87,22 @@ enum class AppThemeMode {
     SYSTEM, LIGHT, DARK
 }
 
+/**
+ * Swipe Theme – Material 3 Expressive
+ *
+ * Uses MaterialExpressiveTheme from material3:1.5.0-alpha29 which:
+ * - Defaults to MotionScheme.expressive() for physics-based spring animations
+ * - Automatically provides bouncy, fluid motion to all M3 components
+ * - Supports the full M3 Expressive component suite (LoadingIndicator,
+ *   FloatingToolbar, WavyProgressIndicator, etc.)
+ *
+ * Reference: https://m3.material.io/blog/material-3-expressive
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SwipeTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    dynamicColor: Boolean = true, // Enabled dynamic colors to embrace Material You
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val isDark = when (themeMode) {
@@ -108,7 +120,7 @@ fun SwipeTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
         typography = M3ExpressiveTypography,
         shapes = M3ExpressiveShapes,
