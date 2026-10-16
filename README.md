@@ -7,9 +7,3 @@
 
 - 🧠 **AI Engineer**: Antigravity (Google DeepMind)
 - 💡 **Product Vision & Architecture Guidance**: [Fernando Nino](https://github.com/FernandoNino38)
-
----
-
-## 📄 License
-
-This project is open-source under the [MIT License](LICENSE).
